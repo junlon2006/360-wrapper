@@ -206,9 +206,8 @@ static void _get_keyword_frame_id_range(int *keyword_start_frame_id,
   int engine_asr_end_time = getOptionInt(ASR_ENGINE_UTTERANCE_STOP_TIME);
   *keyword_start_frame_id = engine_asr_start_time / 16 + g_lasr.start_frame_id;
   *keyword_end_frame_id = engine_asr_end_time / 16 + g_lasr.start_frame_id;
-  LOGT(LASR_TAG, "keyword_start_frame_id=%d, keyword_end_frame_id=%d, %dms",
-       *keyword_start_frame_id, *keyword_end_frame_id,
-       engine_asr_end_time - engine_asr_start_time);
+  LOGT(LASR_TAG, "keyword frame_id[%d, %d], %dms", *keyword_start_frame_id,
+       *keyword_end_frame_id, engine_asr_end_time - engine_asr_start_time);
 }
 
 static void _engine_recognize(char *raw_audio, int bytes_len,
