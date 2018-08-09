@@ -412,8 +412,7 @@ int LasrInit(const char *resource_file_path, LasrParam *lasr_param,
   _set_calc_doa_status(TRUE);
   _pthread_mutex_init();
   _callback_register(cb_audio_source);
-  if (0 != DspInit(resource_file_path,
-                   (CbDspAudioSourceData)_lasr_audio_source_data)) {
+  if (0 != DspInit(resource_file_path, _lasr_audio_source_data)) {
     LOGE(LASR_TAG, "dsp init failed");
     goto L_DSP_INIT_FAILED;
   }
