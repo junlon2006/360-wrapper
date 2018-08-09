@@ -89,6 +89,7 @@ static int _engine_init(const char *resource_file_path) {
   setOptionInt(ASR_ENGINE_SET_FAST_RETURN, 1);
   setOptionInt(ASR_CONF_OUT_INELIGIBLE, 1);
   setOptionInt(ASR_ENGINE_SET_TYPE_ID, 2);
+  setOptionInt(ASR_ENGINE_ENABLE_VAD_ID, 1);
   setOptionInt(ASR_LOG_ID, 1);
   if (0 != (rc = start(domains, 53))) {
     LOGE(LASR_TAG, "engine start failed[%d]", rc);
@@ -190,9 +191,7 @@ static int _get_vad_status() {
       (output_vad_state_info & output_count_filter) >> 58;
     int vad_state = (output_vad_state_info & vad_state_filter) >> 56;
     long long time_point = output_vad_state_info & time_point_filter;
-    if (vad_state == 1) {
-      LOGE(LASR_TAG, "SPEECH START...");
-    } else if (vad_state == 3) {
+    if (vad_state == 3) {
       LOGE(LASR_TAG, "SPEECH END...");
       vad_end = TRUE;
     }
@@ -223,7 +222,7 @@ static void _engine_recognize(char *raw_audio, int bytes_len,
   lasr_rc = recognize(raw_audio, bytes_len);
   if (TRUE == (speech_end = _get_vad_status())) {
     slice_param->vad_end = speech_end;
-    LOGT(LASR_TAG, "speech end, set vad_end=1");
+    //LOGT(LASR_TAG, "speech end, set vad_end=1");
   }
   if (ASR_RECOGNIZER_PARTIAL_RESULT != lasr_rc) {
     pthread_mutex_unlock(&g_lasr.mutex);
@@ -316,8 +315,12 @@ static void _get_keyword_audio_source() {
                          g_lasr.cache_frame_range.latest_frame_id);
   keyword_frame_cnt = end_frame_id - start_frame_id;
   skip_cnts = start_frame_id - g_lasr.cache_frame_range.start_frame_id;
-  LOGT(LASR_TAG, "contains keyword range[%d-%d], skip_frame=%d", start_frame_id,
-       end_frame_id, skip_cnts);
+  LOGT(LASR_TAG, "contains keyword range[%d-%d], skip_frame=%d, cache_frame "
+       "range[%d-%d], slice_range[%d-%d]", start_frame_id,
+       end_frame_id, skip_cnts, g_lasr.cache_frame_range.start_frame_id,
+       g_lasr.cache_frame_range.latest_frame_id,
+       g_lasr.slice_param.keyword_start_frame_id,
+       g_lasr.slice_param.keyword_end_frame_id);
   for (i = 0; i < skip_cnts; i++) {
     DataBufferRead(buf, DSP_FRAME_CNT * sizeof(short), g_lasr.cache_databuf);
   }
