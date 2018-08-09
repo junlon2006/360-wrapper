@@ -52,6 +52,7 @@ typedef void (*CbAudioSource)(char *audio, int bytes_len, /* 实时音频数据 
 /**
  * 功能：初始化云知声离线识别引擎
  * 参数：resource_file_path 云知声引擎识别模型文件路经
+         lasr_param 初始化配置参数
  *       cb_audio_source 云知声降噪后pcm数据源（1channel, 16K采样率，16bit）
          包含离线识别结果，VAD状态等信息
  * 返回：成功返回0，失败返回-1

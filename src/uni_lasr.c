@@ -106,7 +106,13 @@ static void _set_calc_doa_status(int need_calc_doa) {
 static void _recognize_result_parse(char *result, char *keyword, float *score) {
   /* TODO need parse result & score threshold */
   *score = -5.0;
-  strcpy(keyword, "alexa");
+  if (result && uni_strstr(result, "你好")) {
+    strcpy(keyword, "你好魔方");
+  } else if (result && uni_strstr(result, "我要")) {
+    strcpy(keyword, "我要听歌");
+  } else {
+    strcpy(keyword, "N/A");
+  }
   LOGD(LASR_TAG, "get original result[%s]", NULL == result ? "N/A" : result);
 }
 
@@ -252,8 +258,8 @@ static void _set_frame_range_first_id(char *audio, int len) {
   g_lasr.cache_frame_range.start_frame_id = _get_current_frame_id(audio, len);
 }
 
-static void _update_frame_range_first_id() {
-  g_lasr.cache_frame_range.start_frame_id++;
+static void _update_frame_range_first_id(int step_cnt) {
+  g_lasr.cache_frame_range.start_frame_id += step_cnt;
 }
 
 static void _set_frame_range_latest_id(unsigned int frame_id) {
@@ -268,7 +274,7 @@ static void _cache_audio_source(char *audio, int len) {
   if (free_size < len - FRAME_ID_LEN) {
     DataBufferRead(buf, PER_SOURCE_FRAME_LEN - FRAME_ID_LEN,
                    g_lasr.cache_databuf);
-    _update_frame_range_first_id();
+    _update_frame_range_first_id(1);
   }
   DataBufferWrite(g_lasr.cache_databuf, audio, len - FRAME_ID_LEN);
   _set_frame_range_latest_id(_get_current_frame_id(audio, len - FRAME_ID_LEN));
@@ -295,7 +301,7 @@ static void _record(char *buf, int len) {
 
 static void _get_keyword_audio_source() {
   int i;
-  char buf[512];
+  char buf[DSP_FRAME_CNT * sizeof(short)];
   int start_frame_id;
   int end_frame_id;
   int keyword_frame_cnt;
@@ -314,6 +320,7 @@ static void _get_keyword_audio_source() {
   for (i = 0; i < skip_cnts; i++) {
     DataBufferRead(buf, DSP_FRAME_CNT * sizeof(short), g_lasr.cache_databuf);
   }
+  _update_frame_range_first_id(skip_cnts);
   g_lasr.slice_param.lasr_result.audio_contain_keyword =
     (char *)malloc(keyword_frame_cnt * DSP_FRAME_CNT * sizeof(short));
   g_lasr.slice_param.lasr_result.audio_len = keyword_frame_cnt * DSP_FRAME_CNT *
@@ -321,6 +328,7 @@ static void _get_keyword_audio_source() {
   DataBufferRead(g_lasr.slice_param.lasr_result.audio_contain_keyword,
                  keyword_frame_cnt * DSP_FRAME_CNT * sizeof(short),
                  g_lasr.cache_databuf);
+  _update_frame_range_first_id(keyword_frame_cnt);
 #if RECORD_DEBUG_OPEN
   _record(g_lasr.slice_param.lasr_result.audio_contain_keyword,
           keyword_frame_cnt * DSP_FRAME_CNT * sizeof(short));
