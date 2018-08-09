@@ -27,9 +27,8 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#define MAIN_TAG   "main"
-#define RESOURCE_PATH    "/oem/uniapp"
-
+#define MAIN_TAG        "main"
+#define RESOURCE_PATH   "/oem/uniapp"
 
 static void _get_audio_source(char *raw_pcm, int bytes_len,
                               LasrResult *result, int vad_end) {
@@ -47,9 +46,10 @@ int main() {
   LasrParam lasr_param;
   lasr_param.frame_size_msec = 50;
   if (0 != LasrInit(RESOURCE_PATH, &lasr_param, (CbAudioSource)_get_audio_source)) {
-    printf("%s%d: lasr init failed", __FUNCTION__, __LINE__);
+    LOGE(MAIN_TAG, "lasr init failed");
     return -1;
   }
+  LOGT(MAIN_TAG, "360 demo start successfully");
   while (1) {
     usleep(1000 * 1000);
   }
