@@ -339,7 +339,6 @@ static void _get_keyword_audio_source() {
 #endif
 }
 
-
 static void _slice(char *audio, int len) {
   char buf[SLICE_DATA_LEN];
   DataBufferWrite(g_lasr.slice_databuf, audio, len - FRAME_ID_LEN);
