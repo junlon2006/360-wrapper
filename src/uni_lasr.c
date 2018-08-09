@@ -136,7 +136,6 @@ static void _engine_restart(int is_std_wakeup) {
 static unsigned int _get_current_frame_id(char *audio, int bytes_len) {
   unsigned int frame_id;
   memcpy(&frame_id, &audio[bytes_len], sizeof(unsigned int));
-  //LOGT(LASR_TAG, "frame_id=%u", frame_id);
   return frame_id;
 }
 
@@ -192,7 +191,6 @@ static int _get_vad_status() {
     int vad_state = (output_vad_state_info & vad_state_filter) >> 56;
     long long time_point = output_vad_state_info & time_point_filter;
     if (vad_state == 3) {
-      LOGE(LASR_TAG, "SPEECH END...");
       vad_end = TRUE;
     }
     output_vad_state_info = get_vad_state();
@@ -206,7 +204,7 @@ static void _get_keyword_frame_id_range(int *keyword_start_frame_id,
   int engine_asr_end_time = getOptionInt(ASR_ENGINE_UTTERANCE_STOP_TIME);
   *keyword_start_frame_id = engine_asr_start_time / 16 + g_lasr.start_frame_id;
   *keyword_end_frame_id = engine_asr_end_time / 16 + g_lasr.start_frame_id;
-  LOGT(LASR_TAG, "keyword frame_id[%d, %d], %dms", *keyword_start_frame_id,
+  LOGT(LASR_TAG, "keyword frame_id[%d-%d], %dms", *keyword_start_frame_id,
        *keyword_end_frame_id, engine_asr_end_time - engine_asr_start_time);
 }
 
@@ -221,7 +219,6 @@ static void _engine_recognize(char *raw_audio, int bytes_len,
   lasr_rc = recognize(raw_audio, bytes_len);
   if (TRUE == (speech_end = _get_vad_status())) {
     slice_param->vad_end = speech_end;
-    //LOGT(LASR_TAG, "speech end, set vad_end=1");
   }
   if (ASR_RECOGNIZER_PARTIAL_RESULT != lasr_rc) {
     pthread_mutex_unlock(&g_lasr.mutex);
@@ -314,20 +311,24 @@ static void _get_keyword_audio_source() {
                          g_lasr.cache_frame_range.latest_frame_id);
   keyword_frame_cnt = end_frame_id - start_frame_id;
   skip_cnts = start_frame_id - g_lasr.cache_frame_range.start_frame_id;
-  LOGT(LASR_TAG, "contains keyword range[%d-%d], skip_frame=%d, cache_frame "
-       "range[%d-%d], slice_range[%d-%d]", start_frame_id,
+  LOGT(LASR_TAG, "keyword range[%d-%d], skip_frame=%d, cache "
+       "range[%d-%d], slice range[%d-%d]", start_frame_id,
        end_frame_id, skip_cnts, g_lasr.cache_frame_range.start_frame_id,
        g_lasr.cache_frame_range.latest_frame_id,
        g_lasr.slice_param.keyword_start_frame_id,
        g_lasr.slice_param.keyword_end_frame_id);
+  if (DataBufferGetDataSize(g_lasr.cache_databuf) <
+      DSP_FRAME_CNT * sizeof(short) * skip_cnts) {
+    LOGE(LASR_TAG, "cache data too short, must be error");
+  }
   for (i = 0; i < skip_cnts; i++) {
     DataBufferRead(buf, DSP_FRAME_CNT * sizeof(short), g_lasr.cache_databuf);
   }
   _update_frame_range_first_id(skip_cnts);
-  g_lasr.slice_param.lasr_result.audio_contain_keyword =
-    (char *)malloc(keyword_frame_cnt * DSP_FRAME_CNT * sizeof(short));
   g_lasr.slice_param.lasr_result.audio_len = keyword_frame_cnt * DSP_FRAME_CNT *
                                              sizeof(short);
+  g_lasr.slice_param.lasr_result.audio_contain_keyword = (char *)malloc(
+      g_lasr.slice_param.lasr_result.audio_len);
   DataBufferRead(g_lasr.slice_param.lasr_result.audio_contain_keyword,
                  keyword_frame_cnt * DSP_FRAME_CNT * sizeof(short),
                  g_lasr.cache_databuf);
