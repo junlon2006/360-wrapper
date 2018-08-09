@@ -120,13 +120,17 @@ static void _recognize_result_parse(char *result, char *keyword, float *score) {
 static void _engine_restart(int is_std_wakeup) {
   const char *recogn_domains = "ivm";
   const char *wakeup_domains = "wakeup";
+  char *result = NULL;
   if (0 != stop()) {
-    LOGE(LASR_TAG, "engine cancel failed");
+    LOGE(LASR_TAG, "engine stop failed");
+  }
+  if (NULL != (result = getResult())) {
+    LOGD(LASR_TAG, "discard result=%s", result);
   }
   if (is_std_wakeup) {
     LOGD(LASR_TAG, "engine mode std_wakeup");
   } else {
-    LOGD(LASR_TAG, "engine mode ASR");
+    LOGD(LASR_TAG, "engine mode std_asr");
   }
   if (0 != start(is_std_wakeup ? wakeup_domains : recogn_domains, 53)) {
     LOGE(LASR_TAG, "engine start failed");
@@ -214,15 +218,14 @@ static void _engine_recognize(char *raw_audio, int bytes_len,
   float score = -100.0;
   int speech_end;
   char keyword[KEY_WORD_MAX_LEN];
-  _set_start_frame_id(raw_audio, bytes_len);
   pthread_mutex_lock(&g_lasr.mutex);
+  _set_start_frame_id(raw_audio, bytes_len);
   lasr_rc = recognize(raw_audio, bytes_len);
   if (TRUE == (speech_end = _get_vad_status())) {
     slice_param->vad_end = speech_end;
   }
   if (ASR_RECOGNIZER_PARTIAL_RESULT != lasr_rc) {
-    pthread_mutex_unlock(&g_lasr.mutex);
-    return;
+    goto L_UNLOCK;
   }
   _recognize_result_parse(getResult(), keyword, &score);
   if (LASR_WAKEUP_THRESHOLD < score) {
@@ -236,6 +239,7 @@ static void _engine_recognize(char *raw_audio, int bytes_len,
     slice_param->keyword_detected = TRUE;
   }
   _reset_start_frame_id();
+L_UNLOCK:
   pthread_mutex_unlock(&g_lasr.mutex);
 }
 
@@ -446,6 +450,7 @@ int LasrWakeupReset(void) {
   LOGT(LASR_TAG, "reset wakeup mode");
   pthread_mutex_lock(&g_lasr.mutex);
   if (g_lasr.is_wakeup) {
+    _reset();
     _engine_restart(TRUE);
     _set_calc_doa_status(TRUE);
     _set_wakeup_status(FALSE);
