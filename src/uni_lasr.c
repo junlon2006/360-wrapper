@@ -456,10 +456,10 @@ void LasrFinal(void) {
 }
 
 int LasrWakeupReset(void) {
-  DspSetEngineWakeupState(ENGINE_ISNOT_WAKEDUP);
-  LOGT(LASR_TAG, "reset wakeup mode");
   pthread_mutex_lock(&g_lasr.mutex);
   if (g_lasr.is_wakeup) {
+    DspSetEngineWakeupState(ENGINE_ISNOT_WAKEDUP);
+    LOGT(LASR_TAG, "reset wakeup mode");
     _reset();
     _engine_restart(TRUE);
     _set_calc_doa_status(TRUE);
