@@ -166,7 +166,8 @@ static void _calc_doa_proccess(char *audio, int bytes_len) {
   if (g_lasr.need_calc_doa) {
     LOGT(LASR_TAG, "need cal doa");
     timems_len = _get_timems_len(&engine_asr_start_time, &engine_asr_end_time);
-    LOGE(LASR_TAG, "timems_len=%u, end=%u", timems_len, g_lasr.start_frame_id * 16 + engine_asr_end_time);
+    LOGD(LASR_TAG, "timems_len=%u, end_ms=%u", timems_len,
+         g_lasr.start_frame_id * 16 + engine_asr_end_time);
     DspGetDoa(timems_len, g_lasr.start_frame_id * 16 + engine_asr_end_time);
     _set_calc_doa_status(FALSE);
   }
@@ -190,9 +191,9 @@ static int _get_vad_status() {
     int vad_state = (output_vad_state_info & vad_state_filter) >> 56;
     long long time_point = output_vad_state_info & time_point_filter;
     if (vad_state == 1) {
-      LOGT(LASR_TAG, "SPEECH START...");
+      LOGE(LASR_TAG, "SPEECH START...");
     } else if (vad_state == 3) {
-      LOGT(LASR_TAG, "SPEECH END...");
+      LOGE(LASR_TAG, "SPEECH END...");
       vad_end = TRUE;
     }
     output_vad_state_info = get_vad_state();
