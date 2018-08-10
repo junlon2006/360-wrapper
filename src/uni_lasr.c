@@ -224,7 +224,7 @@ static void _set_frame_range_latest_id(unsigned int frame_id) {
   g_lasr.cache_frame_range.latest_frame_id = frame_id;
 }
 
-static void _get_keyword_audio_source() {
+static int _get_keyword_audio_source() {
   int i;
   char buf[DSP_FRAME_CNT * sizeof(short)];
   int start_frame_id;
@@ -245,6 +245,7 @@ static void _get_keyword_audio_source() {
        g_lasr.slice_param.keyword_end_frame_id);
   if (end_frame_id <= start_frame_id) {
     LOGE(LASR_TAG, "end frame < start_frame_id, fatal error");
+    return -1;
   }
   for (i = 0; i < skip_cnts; i++) {
     DataBufferRead(buf, DSP_FRAME_CNT * sizeof(short), g_lasr.cache_databuf);
@@ -262,14 +263,18 @@ static void _get_keyword_audio_source() {
   _record(g_lasr.slice_param.lasr_result.audio_contain_keyword,
           keyword_frame_cnt * DSP_FRAME_CNT * sizeof(short));
 #endif
+  return 0;
 }
 
-static void _fill_slice_param(SliceParam *slice_param, char *keyword) {
-  strcpy(slice_param->lasr_result.keyword, keyword);
+static int _fill_slice_param(SliceParam *slice_param, char *keyword) {
   _get_keyword_frame_id_range(&slice_param->keyword_start_frame_id,
                               &slice_param->keyword_end_frame_id);
-  _get_keyword_audio_source();
+  if (0 != _get_keyword_audio_source()) {
+    return -1;
+  }
+  strcpy(slice_param->lasr_result.keyword, keyword);
   slice_param->keyword_detected = TRUE;
+  return 0;
 }
 
 static void _engine_recognize(char *raw_audio, int bytes_len,
@@ -288,14 +293,19 @@ static void _engine_recognize(char *raw_audio, int bytes_len,
     goto L_UNLOCK;
   }
   _recognize_result_parse(getResult(), keyword, &score);
-  if (LASR_WAKEUP_THRESHOLD < score) {
-    _fill_slice_param(slice_param, keyword);
-    _set_wakeup_status(TRUE);
-    DspSetEngineWakeupState(ENGINE_IS_WAKEDUP);
-    _calc_doa_proccess(raw_audio, bytes_len);
-    _engine_restart(FALSE);
-    _reset_asr_start_frame_id();
+  if (LASR_WAKEUP_THRESHOLD > score) {
+    goto L_UNLOCK;
   }
+  if (0 != _fill_slice_param(slice_param, keyword)) {
+    _engine_restart(TRUE);
+    goto L_RELANCH;
+  }
+  _set_wakeup_status(TRUE);
+  DspSetEngineWakeupState(ENGINE_IS_WAKEDUP);
+  _calc_doa_proccess(raw_audio, bytes_len);
+  _engine_restart(FALSE);
+L_RELANCH:
+  _reset_asr_start_frame_id();
 L_UNLOCK:
   pthread_mutex_unlock(&g_lasr.mutex);
 }
