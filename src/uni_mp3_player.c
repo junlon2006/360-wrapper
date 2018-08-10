@@ -317,7 +317,7 @@ static Result _mp3_prepare_internal(const char *url) {
     return E_FAILED;
   }
   // Open codec
-  if (avcodec_open2(g_mp3_player.pCodecCtx, pCodec,NULL) < 0) {
+  if (avcodec_open2(g_mp3_player.pCodecCtx, pCodec, NULL) < 0) {
     LOGE(MP3_PLAYER_TAG, "Could not open codec");
     return E_FAILED;
   }
