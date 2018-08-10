@@ -111,8 +111,12 @@ static void _recognize_result_parse(char *result, char *keyword, float *score) {
     strcpy(keyword, "你好魔方");
   } else if (result && uni_strstr(result, "我要")) {
     strcpy(keyword, "我要听歌");
-  } else {
-    strcpy(keyword, "N/A");
+  } else if (result && uni_strstr(result, "停止")) {
+    strcpy(keyword, "停止播放");
+  } else if (result && uni_strstr(result, "继续")) {
+    strcpy(keyword, "继续播放");
+  } else if (result && uni_strstr(result, "暂停")) {
+    strcpy(keyword, "暂停播放");
   }
   LOGD(LASR_TAG, "get original result[%s]", NULL == result ? "N/A" : result);
 }
