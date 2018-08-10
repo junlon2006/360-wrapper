@@ -42,6 +42,7 @@
 #define CACHE_DATA_LEN              (10000 * 2 * 16)
 #define SLICE_DATA_LEN              (512 * 10)
 #define RECORD_DEBUG_OPEN           (0)
+#define MODEL_ID                    (53)
 
 typedef struct {
   int start_frame_id;
@@ -91,7 +92,7 @@ static int _engine_init(const char *resource_file_path) {
   setOptionInt(ASR_ENGINE_SET_TYPE_ID, 2);
   setOptionInt(ASR_ENGINE_ENABLE_VAD_ID, 1);
   setOptionInt(ASR_LOG_ID, 1);
-  if (0 != (rc = start(domains, 53))) {
+  if (0 != (rc = start(domains, MODEL_ID))) {
     LOGE(LASR_TAG, "engine start failed[%d]", rc);
     return -1;
   }
@@ -136,7 +137,7 @@ static void _engine_restart(int is_std_wakeup) {
   } else {
     LOGD(LASR_TAG, "engine mode std_asr");
   }
-  if (0 != start(is_std_wakeup ? wakeup_domains : recogn_domains, 53)) {
+  if (0 != start(is_std_wakeup ? wakeup_domains : recogn_domains, MODEL_ID)) {
     LOGE(LASR_TAG, "engine start failed");
   }
 }
