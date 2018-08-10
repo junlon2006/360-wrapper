@@ -236,6 +236,7 @@ static void _tts_param_init(const char *config_file) {
 }
 
 Result TtsCreate(const char *config_file) {
+  LOGT(TTS_PLAYER_TAG, "config_file=%s", config_file);
   uni_memset(&g_tts_player, 0x0, sizeof(TtsPlayer));
   _tts_play_content_list_init();
   _mutex_init();

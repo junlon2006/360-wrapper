@@ -1,0 +1,21 @@
+{
+	"name":	"Unisound VUI config",
+	"version":	"v1.0",
+	"tts":	{
+		"enable": 1,
+		"host":	691108213,
+		"port":	80,
+		"protocol":	1,
+		"encode":	2,
+		"spd":	70,
+		"vol":	85,
+		"pit":	50,
+		"emt":	100,
+		"smt":	100,
+		"save_file":	0,
+		"appkey":	"nlgze3zvhl7cpgbw2mwm2hljh2qevpioplwwv6ih",
+		"secretkey":	"da63addb8309a159516b44bf43e72403",
+		"speaker":	"lzl",
+		"save_path":	"."
+	}
+}

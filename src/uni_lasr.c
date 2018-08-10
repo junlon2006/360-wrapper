@@ -417,7 +417,6 @@ static int _is_lasr_param_valid(LasrParam *lasr_param) {
 
 int LasrInit(const char *resource_file_path, LasrParam *lasr_param,
              CbAudioSource cb_audio_source) {
-  LogInitialize(NULL);
   if (NULL == resource_file_path ||
       NULL == lasr_param ||
       NULL == cb_audio_source ||
@@ -425,7 +424,6 @@ int LasrInit(const char *resource_file_path, LasrParam *lasr_param,
     LOGE(LASR_TAG, "parameter invalid, resource_file_path=%p, "
          "lasr_param=%p, cb_audio_source=%p", resource_file_path, lasr_param,
          cb_audio_source);
-    LogFinalize();
     return -1;
   }
   memset(&g_lasr, 0, sizeof(Lasr));
@@ -450,7 +448,6 @@ L_DSP_INIT_FAILED:
   _databuf_destroy();
   _pthread_mutex_destroy();
   _callback_unregister();
-  LogFinalize();
   return -1;
 }
 
