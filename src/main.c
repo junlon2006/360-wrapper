@@ -99,7 +99,7 @@ static void _get_audio_source(char *raw_pcm, int bytes_len,
   }
   if (vad_end && NULL == result) {
     LOGT(MAIN_TAG, "SPEECH END...");
-    //LasrWakeupReset();
+    LasrWakeupReset();
   }
 }
 
@@ -121,7 +121,7 @@ static Result _audio_out_init() {
 
 int main() {
   LasrParam lasr_param;
-  lasr_param.frame_size_msec = 50;
+  lasr_param.frame_size_msec = 40;
   LogInitialize(NULL);
   ConfigInitialize();
   _audio_out_init();
@@ -130,17 +130,8 @@ int main() {
     LOGE(MAIN_TAG, "lasr init failed");
     return -1;
   }
-  usleep(1000 * 3000);
-  int i = 0;
-  while (1) {
-    if (i++ % 2 == 1) {
-      TtsSetSpeaker("sweet");
-    } else {
-      TtsSetSpeaker("lzl");
-    }
-    TtsPlayString("欢迎使用云知声智能语音产品", TTS_ONLINE);
-    usleep(1000 * 10000);
-  }
+  TtsSetSpeaker("lzl");
+  TtsPlayString("欢迎使用云知声智能语音产品", TTS_ONLINE);
   LOGT(MAIN_TAG, "360 demo start successfully");
   while (1) {
     usleep(1000 * 1000);
