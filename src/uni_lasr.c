@@ -86,12 +86,12 @@ static int _engine_init(const char *resource_file_path) {
     return -1;
   }
   setOptionInt(ASR_SILENCE_HANGOUT_THRESH, 10);
-  setOptionInt(ASR_ENGINE_SET_RESET_FRONTEND_ID, 1);
-  setOptionInt(ASR_ENGINE_SET_FAST_RETURN, 1);
-  setOptionInt(ASR_CONF_OUT_INELIGIBLE, 1);
+  setOptionInt(ASR_ENGINE_SET_RESET_FRONTEND_ID, TRUE);
+  setOptionInt(ASR_ENGINE_SET_FAST_RETURN, TRUE);
+  setOptionInt(ASR_CONF_OUT_INELIGIBLE, TRUE);
   setOptionInt(ASR_ENGINE_SET_TYPE_ID, 2);
-  setOptionInt(ASR_ENGINE_ENABLE_VAD_ID, 1);
-  setOptionInt(ASR_LOG_ID, 1);
+  setOptionInt(ASR_ENGINE_ENABLE_VAD_ID, TRUE);
+  setOptionInt(ASR_LOG_ID, TRUE);
   if (0 != (rc = start(domains, MODEL_ID))) {
     LOGE(LASR_TAG, "engine start failed[%d]", rc);
     return -1;
