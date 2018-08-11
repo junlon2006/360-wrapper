@@ -84,6 +84,7 @@ static struct {
   Mp3State            state;
   uni_pthread_t       prepare_thread;
   uni_mutex_t         mutex;
+  uni_s64             time_base;
   uni_s32             last_timestamp;
   uni_s32             block_state;
 } g_mp3_player = {NULL, NULL, NULL, NULL, NULL, NULL,
@@ -225,16 +226,37 @@ static void _choose_au_convert_ctx(uni_u32 channel_layout,
 static uni_s32 _audio_player_callback(DataBufHandle data_buffer) {
   uni_s32 got_picture;
   uni_s32 ret = 0;
+  uni_s32 rc = 0;
+  static uni_s32 audio4ErrorCnt = 0;
+  uni_s64 byte_position = 0;
   if (MP3_PLAYING_STATE != g_mp3_player.state) {
     return 0;
   }
   g_mp3_player.block_state = BLOCK_READ_FRAME;
   g_mp3_player.last_timestamp = time((time_t *)NULL);
+  byte_position = g_mp3_player.pFormatCtx->pb->pos;
   if (av_read_frame(g_mp3_player.pFormatCtx, g_mp3_player.packet) >= 0) {
+    LOGW(MP3_PLAYER_TAG, "pos=%lld, ptr=%p, end=%p, offset=%d, size=%d, "
+         "start_time=%lld, duration=%f, packet_size=%u, data_offset=%lld", byte_position,
+         g_mp3_player.pFormatCtx->pb->buf_ptr,
+         g_mp3_player.pFormatCtx->pb->buf_end,
+         g_mp3_player.pFormatCtx->pb->buf_end -
+         g_mp3_player.pFormatCtx->pb->buf_ptr,
+         g_mp3_player.pFormatCtx->pb->buffer_size,
+         g_mp3_player.pFormatCtx->start_time,
+         g_mp3_player.pFormatCtx->duration,
+         g_mp3_player.pFormatCtx->packet_size,
+         g_mp3_player.pFormatCtx->data_offset);
     if (g_mp3_player.packet->stream_index == g_mp3_player.audioStream) {
-      if (avcodec_decode_audio4(g_mp3_player.pCodecCtx, g_mp3_player.pFrame,
-                                &got_picture, g_mp3_player.packet) < 0) {
-        LOGE(MP3_PLAYER_TAG, "Error in decoding audio frame");
+      if ((rc = avcodec_decode_audio4(g_mp3_player.pCodecCtx, g_mp3_player.pFrame,
+                                &got_picture, g_mp3_player.packet)) < 0) {
+        LOGE(MP3_PLAYER_TAG, "Error in decoding audio frame, rc=%d", rc);
+        audio4ErrorCnt++;
+        return 0;
+        if (audio4ErrorCnt <= 10) {
+          return 0;
+        }
+        audio4ErrorCnt = 0;
         return -1;
       }
       if (got_picture > 0) {
@@ -287,7 +309,7 @@ static Result _mp3_prepare_internal(const char *url) {
   g_mp3_player.block_state = BLOCK_READ_HEADER;
   g_mp3_player.last_timestamp = time((time_t *)NULL);
   // Retrieve stream information, time consuming
-  if (avformat_find_stream_info(g_mp3_player.pFormatCtx,NULL) < 0) {
+  if (avformat_find_stream_info(g_mp3_player.pFormatCtx, NULL) < 0) {
     LOGE(MP3_PLAYER_TAG, "Couldn't find stream information");
     return E_FAILED;
   }
@@ -332,6 +354,10 @@ static Result _mp3_prepare_internal(const char *url) {
        g_mp3_player.out_sample_rate, g_mp3_player.out_sample_fmt,
        g_mp3_player.out_channels);
   //Out Buffer Size
+  g_mp3_player.time_base = ((uni_s64)g_mp3_player.pCodecCtx->time_base.num *
+                           AV_TIME_BASE) / (uni_s64)(g_mp3_player.pCodecCtx->time_base.den);
+  LOGE(MP3_PLAYER_TAG, "num=%lld, den=%lld, base=%lld", g_mp3_player.pCodecCtx->time_base.num,
+             g_mp3_player.pCodecCtx->time_base.den, g_mp3_player.time_base);
   g_mp3_player.out_buffer_size = av_samples_get_buffer_size(NULL,
       g_mp3_player.out_channels,
       out_nb_samples, g_mp3_player.out_sample_fmt, 1);
@@ -367,10 +393,6 @@ static Result _mp3_release_internal(void) {
     avcodec_free_frame(&g_mp3_player.pFrame);
     g_mp3_player.pFrame= NULL;
   }
-  /*if (NULL != g_mp3_player.au_convert_ctx) {
-    swr_free(&g_mp3_player.au_convert_ctx);
-    g_mp3_player.au_convert_ctx= NULL;
-  }*/
   g_mp3_player.au_convert_ctx= NULL;
   if (NULL != g_mp3_player.out_buffer) {
     av_free(g_mp3_player.out_buffer);
@@ -545,6 +567,21 @@ Result Mp3Final(void) {
     node = head;
   }
   return E_OK;
+}
+
+Result Mp3SeekToMsec(int msec) {
+  LOGW(MP3_PLAYER_TAG, "@@@@@@@@@@@@@@@@@@@time_base=%d",
+       g_mp3_player.time_base);
+#if 1
+  double m_start_time = 100.0;
+  int seek_ts = m_start_time * (g_mp3_player.pCodecCtx->time_base.den) / 
+    g_mp3_player.pCodecCtx->time_base.num;
+  av_seek_frame(g_mp3_player.pFormatCtx, g_mp3_player.audioStream,
+                //g_mp3_player.pFormatCtx->duration/1000 * 0.1,
+      seek_ts,
+                AVSEEK_FLAG_ANY);
+#endif
+  //avio_seek(g_mp3_player.pFormatCtx->pb, 2523206, SEEK_SET);
 }
 
 uni_bool Mp3CheckIsPlaying(void) {

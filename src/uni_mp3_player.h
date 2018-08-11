@@ -32,12 +32,11 @@ extern "C" {
 #include "uni_audio_player.h"
 
 Result Mp3Play(char *filename);
-Result Mp3Prepare(char *filename);
 Result Mp3Start(void);
 Result Mp3Pause(void);
 Result Mp3Resume(void);
 Result Mp3Stop(void);
-
+Result Mp3SeekToMsec(int msec);
 Result Mp3Init(AudioParam *param);
 Result Mp3Final(void);
 
