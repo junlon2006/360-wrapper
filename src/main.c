@@ -99,7 +99,7 @@ static void _get_audio_source(char *raw_pcm, int bytes_len,
   }
   if (vad_end && NULL == result) {
     LOGT(MAIN_TAG, "SPEECH END...");
-    LasrWakeupReset();
+    //LasrWakeupReset();
   }
 }
 
