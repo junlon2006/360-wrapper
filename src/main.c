@@ -86,6 +86,11 @@ static void _music_test(char *command) {
     LOGW(MAIN_TAG, "pause music");
     return;
   }
+  if (0 == strcmp(command, "北京天气")) {
+    TtsPlayString("北京今天天气晴天，33到37度，空气质量优，外出请注意安全",
+                  TTS_ONLINE);
+    return;
+  }
 }
 
 static void _get_audio_source(char *raw_pcm, int bytes_len,

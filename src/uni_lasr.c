@@ -108,6 +108,7 @@ static void _set_calc_doa_status(int need_calc_doa) {
 
 static void _recognize_result_parse(char *result, char *keyword, float *score) {
   /* TODO need parse result & score threshold */
+  LOGD(LASR_TAG, "get original result[%s]", NULL == result ? "N/A" : result);
   *score = -5.0;
   if (result && uni_strstr(result, "你好")) {
     strcpy(keyword, "你好魔方");
@@ -119,8 +120,11 @@ static void _recognize_result_parse(char *result, char *keyword, float *score) {
     strcpy(keyword, "继续播放");
   } else if (result && uni_strstr(result, "暂停")) {
     strcpy(keyword, "暂停播放");
+  } else if (result && uni_strstr(result, "天气")) {
+    strcpy(keyword, "北京天气");
+  } else {
+    strcpy(keyword, "N/A");
   }
-  LOGD(LASR_TAG, "get original result[%s]", NULL == result ? "N/A" : result);
 }
 
 static void _engine_restart(int is_std_wakeup) {
