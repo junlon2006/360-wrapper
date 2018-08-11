@@ -34,6 +34,7 @@
 #include "uni_types.h"
 #include "uni_dsp.h"
 #include "uni_databuf.h"
+#include "uni_utils.h"
 
 #define LASR_TAG                    "lasr"
 #define LASR_WAKEUP_THRESHOLD       (-20.0)
@@ -428,6 +429,7 @@ int LasrInit(const char *resource_file_path, LasrParam *lasr_param,
     return -1;
   }
   memset(&g_lasr, 0, sizeof(Lasr));
+  UtilsInit(resource_file_path);
   _lasr_param_init(lasr_param);
   _databuf_init();
   _set_calc_doa_status(TRUE);
@@ -449,6 +451,7 @@ L_DSP_INIT_FAILED:
   _databuf_destroy();
   _pthread_mutex_destroy();
   _callback_unregister();
+  UtilsFinal();
   return -1;
 }
 

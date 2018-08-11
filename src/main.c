@@ -103,42 +103,17 @@ static void _get_audio_source(char *raw_pcm, int bytes_len,
   }
 }
 
-static Result _audio_out_init() {
-  AudioPlayerParam param;
-  param.channels = 1;
-  param.rate = 16000;
-  param.bit = 16;
-  if (E_OK != AudioPlayerInit(&param)) {
-    LOGE(MAIN_TAG, "audio play init failed");
-    return E_FAILED;
-  }
-  if (E_OK != Mp3Init(&param)) {
-    LOGE(MAIN_TAG, "mp3 init failed");
-    return E_FAILED;
-  }
-  return E_OK;
-}
-
 int main() {
   LasrParam lasr_param;
   lasr_param.frame_size_msec = 40;
-  LogInitialize(NULL);
-  ConfigInitialize();
-  _audio_out_init();
-  TtsCreate(RESOURCE_PATH"/config/config_file");
   if (0 != LasrInit(RESOURCE_PATH, &lasr_param, _get_audio_source)) {
     LOGE(MAIN_TAG, "lasr init failed");
     return -1;
   }
-  TtsSetSpeaker("lzl");
-  TtsPlayString("欢迎使用云知声智能语音产品", TTS_ONLINE);
   LOGT(MAIN_TAG, "360 demo start successfully");
   while (1) {
     usleep(1000 * 1000);
   }
   LasrFinal();
-  TtsDestroy();
-  ConfigFinalize();
-  LogFinalize();
   return 0;
 }
