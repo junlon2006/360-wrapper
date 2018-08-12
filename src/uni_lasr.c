@@ -106,27 +106,55 @@ static void _set_calc_doa_status(int need_calc_doa) {
   LOGT(LASR_TAG, "calc doa status[%d]", need_calc_doa);
 }
 
+static void _parse(char *result, char *keyword, float *score) {
+  char buf[128] = {0};
+  char *tmp = buf;
+  int index = 0;
+  int score_index = 0;
+  int start = 0;
+  char score_buf[16] = {0};
+  while (*result != '\0') {
+    if (*result != ' ' &&
+        *result != '\t' &&
+        *result != '\n') {
+      tmp[index++] = *result;
+    }
+    result++;
+  }
+  index = 0;
+  tmp = buf;
+  while (*tmp != '\0') {
+    if (*(tmp + 1) != '\0' && *tmp == '>' && *(tmp+1) != '<') {
+      start++;
+      tmp++;
+      continue;
+    }
+    if (start == 1 && *tmp == '<') {
+      start++;
+    }
+    if (start == 1) {
+      keyword[index++] = *tmp;
+    }
+    if (start == 3 && *tmp != '>')  {
+      score_buf[score_index++] = *tmp;
+    }
+    tmp++;
+  }
+  keyword[index] = '\0';
+  *score = atof(score_buf);
+  LOGE(LASR_TAG, "keyword=%s, score=%f", keyword, *score);
+}
+
 static void _recognize_result_parse(char *result, char *keyword, float *score) {
   /* TODO need parse result & score threshold */
+  uni_s32 n;
+  float data;
   LOGD(LASR_TAG, "get original result[%s]", NULL == result ? "N/A" : result);
-  *score = -5.0;
-  if (result && uni_strstr(result, "小宝")) {
-    strcpy(keyword, "小宝小宝");
-  } else if (result && uni_strstr(result, "小贝")) {
-    strcpy(keyword, "小贝小贝");
-  } else if (result && uni_strstr(result, "我要")) {
-    strcpy(keyword, "我要听歌");
-  } else if (result && uni_strstr(result, "停止")) {
-    strcpy(keyword, "停止播放");
-  } else if (result && uni_strstr(result, "继续")) {
-    strcpy(keyword, "继续播放");
-  } else if (result && uni_strstr(result, "暂停")) {
-    strcpy(keyword, "暂停播放");
-  } else if (result && uni_strstr(result, "天气")) {
-    strcpy(keyword, "北京天气");
-  } else {
-    strcpy(keyword, "N/A");
+  if (NULL == result || uni_strstr(result, "NULL")) {
+    LOGW(LASR_TAG, "invalid recognize result");
+    return;
   }
+  _parse(result, keyword, score);
 }
 
 static void _engine_restart(int is_std_wakeup) {
