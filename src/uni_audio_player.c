@@ -27,14 +27,14 @@
 
 #define AUDIO_PLAYER_TAG         "aduio_player"
 #define PCM_FRAME_SIZE           (640)
-#define AUDIO_ALL_STOPPED        (-1)
 #define AUDIO_READ_PER_FRAME_CNT (5)
+#define AUDIO_ALL_STOPPED        (-1)
 
 static struct {
   DataBufHandle      databuf_handle[AUDIO_PLAYER_CNT];
   uni_bool           audio_player_playing[AUDIO_PLAYER_CNT];
   AudioPlayerType    cur_front_type;
-  float              front_audio_ratio;
+  float              front_audio_ratio[AUDIO_PLAYER_CNT];
   AudioPlayerInputCb input_handler[AUDIO_PLAYER_CNT];
   void               *audioout_handler;
   uni_pthread_t      pid;
@@ -45,6 +45,12 @@ static struct {
   uni_mutex_t        mutex;
   uni_s32            volume;
 } g_audio_player;
+
+static void _reset_mix_status(AudioPlayerType type) {
+  if (type == g_audio_player.cur_front_type) {
+    g_audio_player.cur_front_type = AUDIO_NULL_PLAYER;
+  }
+}
 
 static void _get_enough_source_data() {
   uni_s32 data_len;
@@ -60,6 +66,7 @@ static void _get_enough_source_data() {
     if (-1 == g_audio_player.input_handler[i](
               g_audio_player.databuf_handle[i])) {
       g_audio_player.audio_player_playing[i] = FALSE;
+      _reset_mix_status(i);
       LOGW(AUDIO_PLAYER_TAG, "audio input[%d] finished or failed", i);
     }
   }
@@ -85,9 +92,10 @@ static void _generate_mixed_data(char *output, uni_s32 len) {
       break;
     }
     if (i == g_audio_player.cur_front_type) {
-      ratio = g_audio_player.front_audio_ratio;
+      ratio = g_audio_player.front_audio_ratio[g_audio_player.cur_front_type];
     } else {
-      ratio = 1 - g_audio_player.front_audio_ratio;
+      ratio = 1 -
+        g_audio_player.front_audio_ratio[g_audio_player.cur_front_type];
     }
     out = (short *)output;
     in = (short *)buf;
@@ -103,7 +111,7 @@ static void _feed_buffer(char *buf, uni_s32 len) {
   uni_hal_audio_write(g_audio_player.audioout_handler, buf, PCM_FRAME_SIZE);
 }
 
-static uni_s32 _update_mix_status() {
+static uni_bool _is_all_player_stopped() {
   uni_s32 active_player_cnt = 0;
   uni_s32 i;
   uni_pthread_mutex_lock(g_audio_player.mutex);
@@ -113,14 +121,10 @@ static uni_s32 _update_mix_status() {
     }
   }
   uni_pthread_mutex_unlock(g_audio_player.mutex);
-  if (1 == active_player_cnt) {
-    g_audio_player.cur_front_type = AUDIO_NULL_PLAYER;
-    g_audio_player.front_audio_ratio = 1.0;
-  }
   if (0 == active_player_cnt) {
     LOGT(AUDIO_PLAYER_TAG, "all active player stopped");
   }
-  return active_player_cnt == 0 ? AUDIO_ALL_STOPPED : 0;
+  return active_player_cnt == 0 ? TRUE : FALSE;
 }
 
 static uni_s32 _audio_write(uni_u32 frames) {
@@ -132,7 +136,7 @@ static uni_s32 _audio_write(uni_u32 frames) {
     _get_enough_source_data();
     _generate_mixed_data(write_buf, sizeof(write_buf));
     _feed_buffer(write_buf, sizeof(write_buf));
-    if (AUDIO_ALL_STOPPED == _update_mix_status()) {
+    if (_is_all_player_stopped()) {
       return AUDIO_ALL_STOPPED;
     }
   }
@@ -291,7 +295,7 @@ void AudioPlayerFinal(void) {
 Result AudioPlayerSetFrontType(AudioPlayerType type, float ratio) {
   uni_pthread_mutex_lock(g_audio_player.mutex);
   g_audio_player.cur_front_type = type;
-  g_audio_player.front_audio_ratio = ratio;
+  g_audio_player.front_audio_ratio[type] = ratio;
   uni_pthread_mutex_unlock(g_audio_player.mutex);
   LOGT(AUDIO_PLAYER_TAG, "front type=%d, ratio=%f", type, ratio);
   return E_OK;
