@@ -37,6 +37,7 @@
 #define PERIOD_SIZE            (2048)
 #define PERIOD_CNT             (4)
 #define DATABUF_SIZE           (65532 * 8)
+#define RECORD_DEBUG_OPEN      (0)
 
 typedef struct {
   pthread_t            capture_pid;
@@ -134,6 +135,24 @@ static void _wakeup_reset() {
   is_last_wakeup = g_dsp_info.is_wakeup;
 }
 
+#if RECORD_DEBUG_OPEN
+static void _record_echo(char *buf, int len) {
+  static int fd = -1;
+  if (-1 == fd ) {
+    fd = uni_open("echo.pcm", UNI_O_WRONLY | UNI_O_CREAT, 0644);
+  }
+  uni_write(fd, buf, len);
+}
+
+static void _record_4mic(char *buf, int len) {
+  static int fd = -1;
+  if (-1 == fd ) {
+    fd = uni_open("4mic.pcm", UNI_O_WRONLY | UNI_O_CREAT, 0644);
+  }
+  uni_write(fd, buf, len);
+}
+#endif
+
 static char *_mic_proccess(char *audio_raw_data, int len) {
   short *asr = NULL;
   short *vad = NULL;
@@ -147,6 +166,10 @@ static char *_mic_proccess(char *audio_raw_data, int len) {
   pthread_mutex_lock(&g_dsp_info.mutex);
   g_dsp_info.capture_frame_id++;
   _wakeup_reset();
+#if RECORD_DEBUG_OPEN
+  _record_echo(g_dsp_info.ref, DSP_FRAME_CNT * sizeof(short) * 2);
+  _record_4mic(g_dsp_info.mic, DSP_FRAME_CNT * sizeof(short) * 4);
+#endif
   Unisound_LinearMicArray_Process(g_dsp_info.mic_handle,
                                   (short *)g_dsp_info.mic,
                                   DSP_FRAME_CNT,
