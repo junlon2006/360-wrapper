@@ -44,6 +44,22 @@ typedef enum {
 
 static void _music_test(char *command) {
   static MusicState state = MUSIC_IDLE;
+  if (0 == strcmp(command, "小宝小宝")) {
+    LOGT(MAIN_TAG, "tts speaker: boy");
+    TtsSetSpeaker("boy");
+    if (state == MUSIC_IDLE) {
+      TtsPlayString("你好，我在", TTS_ONLINE);
+    }
+    return;
+  }
+  if (0 == strcmp(command, "小贝小贝")) {
+    LOGT(MAIN_TAG, "tts speaker: lzl");
+    TtsSetSpeaker("lzl");
+    if (state == MUSIC_IDLE) {
+      TtsPlayString("你好，我在", TTS_ONLINE);
+    }
+    return;
+  }
   if (0 == strcmp(command, "我要听歌")) {
     LOGW(MAIN_TAG, "play music");
     if (MUSIC_IDLE == state) {
@@ -89,6 +105,8 @@ static void _music_test(char *command) {
   if (0 == strcmp(command, "北京天气")) {
     TtsPlayString("北京今天天气晴天，33到37度，空气质量优，外出请注意安全",
                   TTS_ONLINE);
+    AudioPlayerSetFrontType(AUDIO_TTS_PLAYER, 0.8);
+    //LasrWakeupReset();
     return;
   }
 }
@@ -104,7 +122,6 @@ static void _get_audio_source(char *raw_pcm, int bytes_len,
   }
   if (vad_end && NULL == result) {
     LOGT(MAIN_TAG, "SPEECH END...");
-    //LasrWakeupReset();
   }
 }
 

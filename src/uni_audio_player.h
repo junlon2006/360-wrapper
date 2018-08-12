@@ -34,6 +34,13 @@ extern "C" {
 
 /************************ 1. play related *************************/
 
+typedef enum {
+  AUDIO_NULL_PLAYER = -1,
+  AUDIO_MEDIA_PLAYER,
+  AUDIO_TTS_PLAYER,
+  AUDIO_PLAYER_CNT
+} AudioPlayerType;
+
 typedef AudioParam AudioPlayerParam;
 
 /**
@@ -65,7 +72,8 @@ void AudioPlayerFinal(void);
  * Return:  E_OK       start succeeded
  *          E_FAILED   start failed
  */
-Result AudioPlayerStart(AudioPlayerInputCb intput_handler);
+Result AudioPlayerStart(AudioPlayerInputCb intput_handler,
+                        AudioPlayerType type);
 
 /**
  * Usage:   Stop audio player
@@ -73,7 +81,9 @@ Result AudioPlayerStart(AudioPlayerInputCb intput_handler);
  * Return:  E_OK       stop succeeded
  *          E_FAILED   stop failed
  */
-Result AudioPlayerStop(void);
+Result AudioPlayerStop(AudioPlayerType type);
+
+Result AudioPlayerSetFrontType(AudioPlayerType type, float ratio);
 
 /**
  * Usage:   Check if audio player is working

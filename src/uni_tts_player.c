@@ -309,7 +309,7 @@ Result TtsPlayString(char *play_content, TtsType type) {
   g_tts_player.synthesis_force_stoped = FALSE;
   uni_pthread_mutex_unlock(g_tts_player.lock);
   uni_sem_post(g_tts_player.sem_data);
-  AudioPlayerStart(_audio_data_retrieve);
+  AudioPlayerStart(_audio_data_retrieve, AUDIO_TTS_PLAYER);
   return E_OK;
 }
 
@@ -317,7 +317,7 @@ Result TtsStop() {
   uni_pthread_mutex_lock(g_tts_player.lock);
   g_tts_player.synthesis_force_stoped = TRUE;
   uni_pthread_mutex_unlock(g_tts_player.lock);
-  AudioPlayerStop();
+  AudioPlayerStop(AUDIO_TTS_PLAYER);
   return E_OK;
 }
 

@@ -21,27 +21,21 @@
  * Date        : 2018.06.19
  *
  **************************************************************************/
+
 #include "uni_audio_player.h"
 #include "uni_log.h"
 
-#define AUDIO_PLAYER_TAG   "aduio_player"
-#define PCM_FRAME_SIZE     (640)
-
-#define CAPTURE_PCM        (0)
-#if CAPTURE_PCM
-static int f_audio_out;
-#endif
-
-typedef enum {
-  STATE_IDLE,
-  STATE_ACTIVE,
-  STATE_STOPPING
-} AudioPlayerState;
+#define AUDIO_PLAYER_TAG         "aduio_player"
+#define PCM_FRAME_SIZE           (640)
+#define AUDIO_ALL_STOPPED        (-1)
+#define AUDIO_READ_PER_FRAME_CNT (5)
 
 static struct {
-  DataBufHandle      databuf_handle;
-  AudioPlayerState   state;
-  AudioPlayerInputCb input_handler;
+  DataBufHandle      databuf_handle[AUDIO_PLAYER_CNT];
+  uni_bool           audio_player_playing[AUDIO_PLAYER_CNT];
+  AudioPlayerType    cur_front_type;
+  float              front_audio_ratio;
+  AudioPlayerInputCb input_handler[AUDIO_PLAYER_CNT];
   void               *audioout_handler;
   uni_pthread_t      pid;
   uni_bool           running;
@@ -52,58 +46,106 @@ static struct {
   uni_s32            volume;
 } g_audio_player;
 
-static void _set_audio_player_state(AudioPlayerState state) {
-  LOGT(AUDIO_PLAYER_TAG, "state changes from %d to %d",
-       g_audio_player.state, state);
-  g_audio_player.state = state;
+Result AudioPlayerSetFrontType(AudioPlayerType type, float ratio) {
+  uni_pthread_mutex_lock(g_audio_player.mutex);
+  g_audio_player.cur_front_type = type;
+  g_audio_player.front_audio_ratio = ratio;
+  uni_pthread_mutex_unlock(g_audio_player.mutex);
+  LOGT(AUDIO_PLAYER_TAG, "front type=%d, ratio=%f", type, ratio);
+  return E_OK;
 }
 
-static uni_bool _check_audio_player_state(AudioPlayerState state) {
-  return (g_audio_player.state == state);
+static void _get_enough_source_data() {
+  uni_s32 data_len;
+  uni_s32 i;
+  for (i = 0; i < AUDIO_PLAYER_CNT; i++) {
+    if (!g_audio_player.audio_player_playing[i]) {
+      continue;
+    }
+    data_len = DataBufferGetDataSize(g_audio_player.databuf_handle[i]);
+    if (PCM_FRAME_SIZE < data_len) {
+      continue;
+    }
+    if (-1 == g_audio_player.input_handler[i](
+              g_audio_player.databuf_handle[i])) {
+      g_audio_player.audio_player_playing[i] = FALSE;
+      LOGW(AUDIO_PLAYER_TAG, "audio input[%d] finished or failed", i);
+    }
+  }
+}
+
+static void _generate_mixed_data(char *output, uni_s32 len) {
+  char buf[PCM_FRAME_SIZE] = {0};
+  uni_s32 i, j;
+  uni_s32 data_len;
+  float ratio;
+  short *out;
+  short *in;
+  memset(output, 0, PCM_FRAME_SIZE);
+  for (i = 0; i < AUDIO_PLAYER_CNT; i++) {
+    data_len = DataBufferGetDataSize(g_audio_player.databuf_handle[i]);
+    if (data_len <= 0) {
+      continue;
+    }
+    DataBufferRead(buf, uni_min(data_len, PCM_FRAME_SIZE),
+                   g_audio_player.databuf_handle[i]);
+    if (AUDIO_NULL_PLAYER == g_audio_player.cur_front_type) {
+      memcpy(output, buf, PCM_FRAME_SIZE);
+      break;
+    }
+    if (i == g_audio_player.cur_front_type) {
+      ratio = g_audio_player.front_audio_ratio;
+    } else {
+      ratio = 1 - g_audio_player.front_audio_ratio;
+    }
+    out = (short *)output;
+    in = (short *)buf;
+    for (j = 0; j < uni_min(data_len, PCM_FRAME_SIZE) / 2; j++) {
+      *out += (*in) * ratio;
+      out++;
+      in++;
+    }
+  }
+}
+
+static void _feed_buffer(char *buf, uni_s32 len) {
+  uni_hal_audio_write(g_audio_player.audioout_handler, buf, PCM_FRAME_SIZE);
+}
+
+static uni_s32 _update_mix_status() {
+  uni_s32 active_player_cnt = 0;
+  uni_s32 i;
+  uni_pthread_mutex_lock(g_audio_player.mutex);
+  for (i = 0; i < AUDIO_PLAYER_CNT; i++) {
+    if (g_audio_player.audio_player_playing[i]) {
+      active_player_cnt++;
+    }
+  }
+  uni_pthread_mutex_unlock(g_audio_player.mutex);
+  if (1 == active_player_cnt) {
+    g_audio_player.cur_front_type = AUDIO_NULL_PLAYER;
+    g_audio_player.front_audio_ratio = 1.0;
+  }
+  if (0 == active_player_cnt) {
+    LOGT(AUDIO_PLAYER_TAG, "all active player stopped");
+  }
+  return active_player_cnt == 0 ? AUDIO_ALL_STOPPED : 0;
 }
 
 static uni_s32 _audio_write(uni_u32 frames) {
+  char write_buf[PCM_FRAME_SIZE] = {0};
   uni_u32 total_frames = 0;
-  char write_buf[PCM_FRAME_SIZE];
-  uni_u32 data_len;
-  while (total_frames < frames) {
-    data_len = DataBufferGetDataSize(g_audio_player.databuf_handle);
-    if (data_len < PCM_FRAME_SIZE) {
-      uni_s32 ret = g_audio_player.input_handler(g_audio_player.databuf_handle);
-      if (ret < 0) {
-        LOGW(AUDIO_PLAYER_TAG, "audio input finished or failed");
-        memset(write_buf, 0, PCM_FRAME_SIZE);
-        DataBufferRead(write_buf, data_len, g_audio_player.databuf_handle);
-        uni_hal_audio_write(g_audio_player.audioout_handler, write_buf,
-                            PCM_FRAME_SIZE);
-        memset(write_buf, 0, PCM_FRAME_SIZE);
-        uni_hal_audio_write(g_audio_player.audioout_handler, write_buf,
-                            PCM_FRAME_SIZE);
-        uni_hal_audio_write(g_audio_player.audioout_handler, write_buf,
-                            PCM_FRAME_SIZE);
-        uni_hal_audio_write(g_audio_player.audioout_handler, write_buf,
-                            PCM_FRAME_SIZE);
-#if CAPTURE_PCM
-        uni_hal_fwrite(f_audio_out, write_buf, data_len);
-#endif
-        return -1;
-      } else if (ret < PCM_FRAME_SIZE) {
-        /* wait until next write */
-        return 0;
-      }
+  uni_s32 i;
+  uni_s32 rc;
+  while (total_frames++ < frames) {
+    _get_enough_source_data();
+    _generate_mixed_data(write_buf, sizeof(write_buf));
+    _feed_buffer(write_buf, sizeof(write_buf));
+    if (AUDIO_ALL_STOPPED == _update_mix_status()) {
+      return AUDIO_ALL_STOPPED;
     }
-    DataBufferPeek(write_buf, PCM_FRAME_SIZE, g_audio_player.databuf_handle);
-#if CAPTURE_PCM
-    uni_hal_fwrite(f_audio_out, write_buf, PCM_FRAME_SIZE);
-#endif
-    if (uni_hal_audio_write(g_audio_player.audioout_handler, write_buf,
-                            PCM_FRAME_SIZE) < 0) {
-      break;
-    }
-    DataBufferRead(write_buf, PCM_FRAME_SIZE, g_audio_player.databuf_handle);
-    total_frames++;
   }
-  return total_frames;
+  return 0;
 }
 
 static void _player_start_internal(void) {
@@ -112,7 +154,10 @@ static void _player_start_internal(void) {
 }
 
 static void _player_stop_internal(void) {
-  DataBufferClear(g_audio_player.databuf_handle);
+  int i;
+  for (i = 0; i < AUDIO_PLAYER_CNT; i++) {
+    DataBufferClear(g_audio_player.databuf_handle[i]);
+  }
 }
 
 static void _audio_player_process(void *args) {
@@ -122,21 +167,8 @@ static void _audio_player_process(void *args) {
     _player_start_internal();
     LOGT(AUDIO_PLAYER_TAG, "playing started!!!");
     while (TRUE) {
-      if (_check_audio_player_state(STATE_STOPPING)) {
-        _set_audio_player_state(STATE_IDLE);
-        uni_sem_post(g_audio_player.wait_stop);
-        LOGT(AUDIO_PLAYER_TAG, "playing is force stopped");
+      if (AUDIO_ALL_STOPPED == _audio_write(AUDIO_READ_PER_FRAME_CNT)) {
         break;
-      }
-      if (_check_audio_player_state(STATE_IDLE)) {
-        break;
-      }
-      if (-1 == _audio_write(5)) {
-        uni_pthread_mutex_lock(g_audio_player.mutex);
-        if (_check_audio_player_state(STATE_ACTIVE)) {
-          _set_audio_player_state(STATE_IDLE);
-        }
-        uni_pthread_mutex_unlock(g_audio_player.mutex);
       }
     }
     _player_stop_internal();
@@ -187,7 +219,10 @@ static Result _create_audio_player_thread(void) {
 }
 
 static void _databuf_create() {
-  g_audio_player.databuf_handle = DataBufferCreate(4096);
+  int i;
+  for (i = 0; i < AUDIO_PLAYER_CNT; i++) {
+    g_audio_player.databuf_handle[i] = DataBufferCreate(4096);
+  }
 }
 
 static void _mutex_init() {
@@ -201,7 +236,10 @@ static void _sem_init() {
 }
 
 static void _databuf_destroy() {
-  DataBufferDestroy(g_audio_player.databuf_handle);
+  int i;
+  for (i = 0; i < AUDIO_PLAYER_CNT; i++) {
+    DataBufferDestroy(g_audio_player.databuf_handle[i]);
+  }
 }
 
 static void _mutex_destroy() {
@@ -214,12 +252,17 @@ static void _sem_destroy() {
   uni_sem_destroy(g_audio_player.sem_thread_exit_sync);
 }
 
+static void _set_front_audio_type(AudioPlayerType type) {
+  g_audio_player.cur_front_type = type;
+  LOGT(AUDIO_PLAYER_TAG, "type=%d", type);
+}
+
 Result AudioPlayerInit(AudioPlayerParam *param) {
   uni_memset(&g_audio_player, 0, sizeof(g_audio_player));
+  _set_front_audio_type(AUDIO_NULL_PLAYER);
   _databuf_create();
   _mutex_init();
   _sem_init();
-  _set_audio_player_state(STATE_IDLE);
   if (E_OK != _audioout_init(param)) {
     goto L_AUDIOOUT_INIT_FAILED;
   }
@@ -237,7 +280,6 @@ L_AUDIOOUT_INIT_FAILED:
 }
 
 static void _worker_thread_exit() {
-  _set_audio_player_state(STATE_IDLE);
   g_audio_player.running = FALSE;
   uni_sem_post(g_audio_player.wait_start);
   uni_sem_wait(g_audio_player.sem_thread_exit_sync);
@@ -255,39 +297,26 @@ void AudioPlayerFinal(void) {
   _destroy_all();
 }
 
-Result AudioPlayerStart(AudioPlayerInputCb input_handler) {
-  if (_check_audio_player_state(STATE_ACTIVE)) {
-    LOGW(AUDIO_PLAYER_TAG, "wrong state");
+Result AudioPlayerStart(AudioPlayerInputCb input_handler,
+                        AudioPlayerType type) {
+  if (type <= AUDIO_NULL_PLAYER || AUDIO_PLAYER_CNT <= type) {
+    LOGE(AUDIO_PLAYER_TAG, "type[%d] invalid", type);
     return E_FAILED;
   }
-#if CAPTURE_PCM
-  f_audio_out = uni_hal_fopen("audio_out.pcm", O_CREAT | O_RDWR);
-#endif
-  g_audio_player.input_handler = input_handler;
-  _set_audio_player_state(STATE_ACTIVE);
-  /* clear history audio_end events which may affect the current playing */
+  LOGE(AUDIO_PLAYER_TAG, "type[%d]", type);
+  g_audio_player.input_handler[type] = input_handler;
+  g_audio_player.audio_player_playing[type] = TRUE;
   uni_sem_post(g_audio_player.wait_start);
   return E_OK;
 }
 
-Result AudioPlayerStop(void) {
-  uni_pthread_mutex_lock(g_audio_player.mutex);
-  if (!_check_audio_player_state(STATE_ACTIVE)) {
-    LOGW(AUDIO_PLAYER_TAG, "wrong state");
-    uni_pthread_mutex_unlock(g_audio_player.mutex);
-    return E_FAILED;
-  }
-#if CAPTURE_PCM
-  uni_hal_fclose(f_audio_out);
-#endif
-  _set_audio_player_state(STATE_STOPPING);
-  uni_pthread_mutex_unlock(g_audio_player.mutex);
-  uni_sem_wait(g_audio_player.wait_stop);
+Result AudioPlayerStop(AudioPlayerType type) {
+  g_audio_player.audio_player_playing[type] = FALSE;
   return E_OK;
 }
 
 uni_bool AudioPlayerIsActive(void) {
-  return (_check_audio_player_state(STATE_ACTIVE));
+  return 0;
 }
 
 Result AudioVolumeSet(uni_s32 vol) {

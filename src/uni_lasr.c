@@ -110,8 +110,10 @@ static void _recognize_result_parse(char *result, char *keyword, float *score) {
   /* TODO need parse result & score threshold */
   LOGD(LASR_TAG, "get original result[%s]", NULL == result ? "N/A" : result);
   *score = -5.0;
-  if (result && uni_strstr(result, "你好")) {
-    strcpy(keyword, "你好魔方");
+  if (result && uni_strstr(result, "小宝")) {
+    strcpy(keyword, "小宝小宝");
+  } else if (result && uni_strstr(result, "小贝")) {
+    strcpy(keyword, "小贝小贝");
   } else if (result && uni_strstr(result, "我要")) {
     strcpy(keyword, "我要听歌");
   } else if (result && uni_strstr(result, "停止")) {

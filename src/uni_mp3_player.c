@@ -236,6 +236,7 @@ static uni_s32 _audio_player_callback(DataBufHandle data_buffer) {
   g_mp3_player.last_timestamp = time((time_t *)NULL);
   byte_position = g_mp3_player.pFormatCtx->pb->pos;
   if (av_read_frame(g_mp3_player.pFormatCtx, g_mp3_player.packet) >= 0) {
+#if 0
     LOGW(MP3_PLAYER_TAG, "pos=%lld, ptr=%p, end=%p, offset=%d, size=%d, "
          "start_time=%lld, duration=%f, packet_size=%u, data_offset=%lld", byte_position,
          g_mp3_player.pFormatCtx->pb->buf_ptr,
@@ -247,6 +248,7 @@ static uni_s32 _audio_player_callback(DataBufHandle data_buffer) {
          g_mp3_player.pFormatCtx->duration,
          g_mp3_player.pFormatCtx->packet_size,
          g_mp3_player.pFormatCtx->data_offset);
+#endif
     if (g_mp3_player.packet->stream_index == g_mp3_player.audioStream) {
       if ((rc = avcodec_decode_audio4(g_mp3_player.pCodecCtx, g_mp3_player.pFrame,
                                 &got_picture, g_mp3_player.packet)) < 0) {
@@ -381,7 +383,7 @@ static void _mp3_start_internal(void) {
 #if CAPTURE_PCM
   f_pcm_out = uni_hal_fopen("pcm_out.pcm", O_CREAT | O_RDWR);
 #endif
-  AudioPlayerStart(_audio_player_callback);
+  AudioPlayerStart(_audio_player_callback, AUDIO_MEDIA_PLAYER);
 }
 
 static Result _mp3_release_internal(void) {
@@ -412,7 +414,7 @@ static Result _mp3_release_internal(void) {
 }
 
 static void _mp3_stop_internal(void) {
-  AudioPlayerStop();
+  AudioPlayerStop(AUDIO_MEDIA_PLAYER);
   uni_msleep(400);
 #if CAPTURE_PCM
   uni_hal_fclose(f_pcm_out);
@@ -572,7 +574,7 @@ Result Mp3Final(void) {
 Result Mp3SeekToMsec(int msec) {
   LOGW(MP3_PLAYER_TAG, "@@@@@@@@@@@@@@@@@@@time_base=%d",
        g_mp3_player.time_base);
-#if 1
+#if 0
   double m_start_time = 100.0;
   int seek_ts = m_start_time * (g_mp3_player.pCodecCtx->time_base.den) / 
     g_mp3_player.pCodecCtx->time_base.num;
@@ -581,7 +583,7 @@ Result Mp3SeekToMsec(int msec) {
       seek_ts,
                 AVSEEK_FLAG_ANY);
 #endif
-  //avio_seek(g_mp3_player.pFormatCtx->pb, 2523206, SEEK_SET);
+  avio_seek(g_mp3_player.pFormatCtx->pb, 2523206, SEEK_SET);
 }
 
 uni_bool Mp3CheckIsPlaying(void) {
