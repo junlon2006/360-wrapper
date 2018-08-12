@@ -46,15 +46,6 @@ static struct {
   uni_s32            volume;
 } g_audio_player;
 
-Result AudioPlayerSetFrontType(AudioPlayerType type, float ratio) {
-  uni_pthread_mutex_lock(g_audio_player.mutex);
-  g_audio_player.cur_front_type = type;
-  g_audio_player.front_audio_ratio = ratio;
-  uni_pthread_mutex_unlock(g_audio_player.mutex);
-  LOGT(AUDIO_PLAYER_TAG, "front type=%d, ratio=%f", type, ratio);
-  return E_OK;
-}
-
 static void _get_enough_source_data() {
   uni_s32 data_len;
   uni_s32 i;
@@ -297,6 +288,15 @@ void AudioPlayerFinal(void) {
   _destroy_all();
 }
 
+Result AudioPlayerSetFrontType(AudioPlayerType type, float ratio) {
+  uni_pthread_mutex_lock(g_audio_player.mutex);
+  g_audio_player.cur_front_type = type;
+  g_audio_player.front_audio_ratio = ratio;
+  uni_pthread_mutex_unlock(g_audio_player.mutex);
+  LOGT(AUDIO_PLAYER_TAG, "front type=%d, ratio=%f", type, ratio);
+  return E_OK;
+}
+
 Result AudioPlayerStart(AudioPlayerInputCb input_handler,
                         AudioPlayerType type) {
   if (type <= AUDIO_NULL_PLAYER || AUDIO_PLAYER_CNT <= type) {
@@ -304,14 +304,18 @@ Result AudioPlayerStart(AudioPlayerInputCb input_handler,
     return E_FAILED;
   }
   LOGE(AUDIO_PLAYER_TAG, "type[%d]", type);
+  uni_pthread_mutex_lock(g_audio_player.mutex);
   g_audio_player.input_handler[type] = input_handler;
   g_audio_player.audio_player_playing[type] = TRUE;
+  uni_pthread_mutex_unlock(g_audio_player.mutex);
   uni_sem_post(g_audio_player.wait_start);
   return E_OK;
 }
 
 Result AudioPlayerStop(AudioPlayerType type) {
+  uni_pthread_mutex_lock(g_audio_player.mutex);
   g_audio_player.audio_player_playing[type] = FALSE;
+  uni_pthread_mutex_unlock(g_audio_player.mutex);
   return E_OK;
 }
 

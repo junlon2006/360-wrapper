@@ -484,7 +484,7 @@ static Result _mp3_fsm(Mp3Event event, void *param) {
       break;
     case MP3_PLAYING_STATE:
       if (MP3_PAUSE_EVENT == event) {
-        _mp3_stop_internal();
+        //_mp3_stop_internal();
         _mp3_set_state(MP3_PAUSED_STATE);
         rc = E_OK;
       } else if (MP3_STOP_EVENT == event) {
