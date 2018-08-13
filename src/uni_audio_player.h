@@ -38,6 +38,7 @@ typedef enum {
   AUDIO_NULL_PLAYER = -1,
   AUDIO_MEDIA_PLAYER,
   AUDIO_TTS_PLAYER,
+  AUDIO_PCM_PLAYER,
   AUDIO_PLAYER_CNT
 } AudioPlayerType;
 

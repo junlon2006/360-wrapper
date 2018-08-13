@@ -30,8 +30,8 @@
 #include "uni_mp3_player.h"
 #include "uni_tts_player.h"
 #include "uni_config.h"
-#include <stdio.h>
-#include <unistd.h>
+#include "uni_mp3_parse_pcm.h"
+#include "uni_pcm_player.h"
 
 #define MAIN_TAG        "main"
 #define RESOURCE_PATH   "/run/uniapp"
@@ -65,6 +65,7 @@ static void _music_test(char *command) {
       Mp3Play("http://m128.xiami.net/158/7158/2103755363/180336"
               "5859_1529979280707.mp3?auth_key=1534474800-0-0-d84"
               "3d147ee52deee4bbc9c53f0c28aa8");
+      AudioPlayerSetFrontType(AUDIO_MEDIA_PLAYER, 0.8);
       state = MUSIC_PLAYING;
     } else {
       LOGW(MAIN_TAG, "invalid state");
@@ -123,6 +124,22 @@ static void _get_audio_source(char *raw_pcm, int bytes_len,
   }
 }
 
+static void _mp3_parse_pcm_callback(char *data, int len, Mp3ParseErrorCode rc) {
+  static char *buf = NULL;
+  static int index = 0;
+  if (NULL == buf) {
+    buf = malloc(1024 * 1024 * 10);
+  }
+  if (rc == MP3_PARSE_OK) {
+    memcpy(buf + index, data, len);
+    index += len;
+  }
+  if (rc == MP3_PARSE_DONE) {
+    LOGE(MAIN_TAG, "start pcm player");
+    PcmPlay(buf, index);
+  }
+}
+
 int main() {
   LasrParam lasr_param;
   lasr_param.frame_size_msec = 40;
@@ -130,7 +147,11 @@ int main() {
     LOGE(MAIN_TAG, "lasr init failed");
     return -1;
   }
+  Mp3ParsePcm("http://m128.xiami.net/770/2110321770/2103794783/1803654324_1531289479477.mp3?auth_key=1534474800-0-0-b918c74460761ba8de72dda444dbbdc8",
+              _mp3_parse_pcm_callback);
   LOGT(MAIN_TAG, "360 demo start successfully");
+  usleep(30 * 1000 * 1000);
+  PcmStop();
   while (1) {
     usleep(1000 * 1000);
   }
