@@ -142,7 +142,7 @@ static void _parse(char *result, char *keyword, float *score) {
   }
   keyword[index] = '\0';
   *score = atof(score_buf);
-  LOGE(LASR_TAG, "keyword=%s, score=%f", keyword, *score);
+  LOGT(LASR_TAG, "keyword=%s, score=%f", keyword, *score);
 }
 
 static void _recognize_result_parse(char *result, char *keyword, float *score) {
