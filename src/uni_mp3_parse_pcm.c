@@ -288,7 +288,7 @@ static void _decode_tsk(void *args) {
   }
 }
 
-static uni_s32 _get_decode_pcm_data(CbPoolPcmData cb_pool_pcm_data) {
+static uni_s32 _create_decode_worker_thread(CbPoolPcmData cb_pool_pcm_data) {
   struct thread_param tThreadParm;
   uni_pthread_t pid;
   uni_memset(&tThreadParm, 0, sizeof(tThreadParm));
@@ -325,6 +325,6 @@ int Mp3ParsePcm(const char *mp3_file_path, CbPoolPcmData cb_pool_pcm_data) {
     LOGE(MP3_PARSE_PCM_TAG, "mp3 parse failed");
     return -1;
   }
-  _get_decode_pcm_data(cb_pool_pcm_data);
+  _create_decode_worker_thread(cb_pool_pcm_data);
   return 0;
 }
