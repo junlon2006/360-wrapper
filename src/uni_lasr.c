@@ -146,9 +146,6 @@ static void _parse(char *result, char *keyword, float *score) {
 }
 
 static void _recognize_result_parse(char *result, char *keyword, float *score) {
-  /* TODO need parse result & score threshold */
-  uni_s32 n;
-  float data;
   LOGD(LASR_TAG, "get original result[%s]", NULL == result ? "N/A" : result);
   if (NULL == result || uni_strstr(result, "NULL")) {
     LOGW(LASR_TAG, "invalid recognize result");
@@ -299,10 +296,6 @@ static int _get_keyword_audio_source() {
                  keyword_frame_cnt * DSP_FRAME_CNT * sizeof(short),
                  g_lasr.cache_databuf);
   _update_frame_range_first_id(keyword_frame_cnt);
-#if RECORD_DEBUG_OPEN
-  _record(g_lasr.slice_param.lasr_result.audio_contain_keyword,
-          keyword_frame_cnt * DSP_FRAME_CNT * sizeof(short));
-#endif
   return 0;
 }
 
@@ -392,7 +385,7 @@ static void _reset() {
 static void _record(char *buf, int len) {
   static int fd = -1;
   if (-1 == fd ) {
-    fd = uni_open("keyword.pcm", UNI_O_WRONLY | UNI_O_CREAT, 0644);
+    fd = uni_open("lasr.pcm", UNI_O_WRONLY | UNI_O_CREAT, 0644);
   }
   uni_write(fd, buf, len);
 }
@@ -415,6 +408,9 @@ static void _slice(char *audio, int len) {
 
 static void _lasr_audio_source_data(char *audio, int len) {
   _cache_audio_source(audio, len - FRAME_ID_LEN);
+#if RECORD_DEBUG_OPEN
+  _record(audio, len - FRAME_ID_LEN);
+#endif
   _engine_recognize(audio, len - FRAME_ID_LEN, &g_lasr.slice_param);
   _slice(audio, len - FRAME_ID_LEN);
 }

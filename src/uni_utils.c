@@ -56,7 +56,7 @@ int UtilsInit(const char *resource_file_path) {
   snprintf(tts_config_file_name, sizeof(tts_config_file_name),
            "%s/config/config_file", resource_file_path);
   TtsCreate(tts_config_file_name);
-  TtsSetSpeaker("lzl");
+  TtsSetSpeaker("kiyo");
   TtsPlayString("欢迎使用云知声智能语音产品", TTS_ONLINE);
   LOGT(UTILS_TAG, "utils init successfully");
   return 0;
