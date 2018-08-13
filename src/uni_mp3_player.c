@@ -250,11 +250,11 @@ static uni_s32 _audio_player_callback(DataBufHandle data_buffer) {
          g_mp3_player.pFormatCtx->data_offset);
 #endif
     if (g_mp3_player.packet->stream_index == g_mp3_player.audioStream) {
-      if ((rc = avcodec_decode_audio4(g_mp3_player.pCodecCtx, g_mp3_player.pFrame,
-                                &got_picture, g_mp3_player.packet)) < 0) {
+      if ((rc = avcodec_decode_audio4(g_mp3_player.pCodecCtx,
+                                      g_mp3_player.pFrame,
+                                      &got_picture, g_mp3_player.packet)) < 0) {
         LOGE(MP3_PLAYER_TAG, "Error in decoding audio frame, rc=%d", rc);
         audio4ErrorCnt++;
-        return 0;
         if (audio4ErrorCnt <= 10) {
           return 0;
         }
