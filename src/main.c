@@ -44,8 +44,9 @@ typedef enum {
   MUSIC_IDLE
 } MusicState;
 
+static MusicState state = MUSIC_IDLE;
+
 static void _music_test(char *command) {
-  static MusicState state = MUSIC_IDLE;
   if (0 == strcmp(command, "小宝小宝")) {
     LOGT(MAIN_TAG, "tts speaker: boy");
     TtsSetSpeaker("boy");
@@ -67,7 +68,6 @@ static void _music_test(char *command) {
       Mp3Play("http://m128.xiami.net/158/7158/2103755363/180336"
               "5859_1529979280707.mp3?auth_key=1534474800-0-0-d84"
               "3d147ee52deee4bbc9c53f0c28aa8");
-      AudioPlayerSetFrontType(AUDIO_MEDIA_PLAYER, 0.8);
       state = MUSIC_PLAYING;
     } else {
       LOGW(MAIN_TAG, "invalid state");
@@ -156,6 +156,9 @@ static void _mp3_mix_test() {
 
 static void _event_callback(EventType type) {
   LOGW(MAIN_TAG, "recv event %d[%s]", type, EventType2String(type));
+  if (type == AUDIO_PLAY_MEDIA_END) {
+    state = MUSIC_IDLE;
+  }
 }
 
 int main() {

@@ -281,6 +281,7 @@ static uni_s32 _audio_player_callback(DataBufHandle data_buffer) {
     av_free_packet(g_mp3_player.packet);
   } else {
     SendEvent(AUDIO_PLAY_MEDIA_END);
+    Mp3Stop();
     LOGT(MP3_PLAYER_TAG, "mp3 play finished");
     return -1;
   }
@@ -312,15 +313,11 @@ static Result _mp3_prepare_internal(const char *url) {
   }
   g_mp3_player.block_state = BLOCK_READ_HEADER;
   g_mp3_player.last_timestamp = time((time_t *)NULL);
-  // Retrieve stream information, time consuming
   if (avformat_find_stream_info(g_mp3_player.pFormatCtx, NULL) < 0) {
     LOGE(MP3_PLAYER_TAG, "Couldn't find stream information");
     return E_FAILED;
   }
   g_mp3_player.block_state = BLOCK_NULL;
-  // Dump valid information onto standard error
-  //av_dump_format(g_mp3_player.pFormatCtx, 0, url, 0);
-  // Find the first audio stream
   g_mp3_player.audioStream = -1;
   for (i = 0; i < g_mp3_player.pFormatCtx->nb_streams; i++) {
     if (g_mp3_player.pFormatCtx->streams[i]->codec->codec_type ==
@@ -333,21 +330,17 @@ static Result _mp3_prepare_internal(const char *url) {
     LOGE(MP3_PLAYER_TAG, "Didn't find a audio stream");
     return E_FAILED;
   }
-  // Get a pointer to the codec context for the audio stream
   g_mp3_player.pCodecCtx =
     g_mp3_player.pFormatCtx->streams[g_mp3_player.audioStream]->codec;
-  // Find the decoder for the audio stream
   pCodec = avcodec_find_decoder(g_mp3_player.pCodecCtx->codec_id);
   if (pCodec == NULL) {
     LOGE(MP3_PLAYER_TAG, "Codec not found");
     return E_FAILED;
   }
-  // Open codec
   if (avcodec_open2(g_mp3_player.pCodecCtx, pCodec, NULL) < 0) {
     LOGE(MP3_PLAYER_TAG, "Could not open codec");
     return E_FAILED;
   }
-  //nb_samples: AAC-1024 MP3-1152
   in_nb_samples = g_mp3_player.pCodecCtx->frame_size;
   out_nb_samples = in_nb_samples * g_mp3_player.out_sample_rate /
                    g_mp3_player.pCodecCtx->sample_rate + 1;
@@ -357,7 +350,6 @@ static Result _mp3_prepare_internal(const char *url) {
        in_nb_samples, out_nb_samples, g_mp3_player.pCodecCtx->sample_rate,
        g_mp3_player.out_sample_rate, g_mp3_player.out_sample_fmt,
        g_mp3_player.out_channels);
-  //Out Buffer Size
   g_mp3_player.time_base = ((uni_s64)g_mp3_player.pCodecCtx->time_base.num *
                            AV_TIME_BASE) / (uni_s64)(g_mp3_player.pCodecCtx->time_base.den);
   LOGE(MP3_PLAYER_TAG, "num=%lld, den=%lld, base=%lld", g_mp3_player.pCodecCtx->time_base.num,
@@ -368,10 +360,8 @@ static Result _mp3_prepare_internal(const char *url) {
   LOGT(MP3_PLAYER_TAG, "g_mp3_player.out_buffer_size is [%d]",
        g_mp3_player.out_buffer_size);
   g_mp3_player.out_buffer = (uint8_t *)av_malloc(g_mp3_player.out_buffer_size);
-  //FIX:Some Codec's Context Information is missing
   in_channel_layout = av_get_default_channel_layout(
       g_mp3_player.pCodecCtx->channels);
-  //Swr
   _choose_au_convert_ctx(in_channel_layout,
                          g_mp3_player.pCodecCtx->sample_fmt,
                          g_mp3_player.pCodecCtx->sample_rate);
@@ -556,7 +546,6 @@ Result Mp3Init(AudioParam *param) {
   } else {
     g_mp3_player.out_sample_fmt = AV_SAMPLE_FMT_S32;
   }
-  /* put most often used configuration in list */
   _create_convert_ctx_node(AV_CH_LAYOUT_STEREO, AV_SAMPLE_FMT_S16, 44100);
   return E_OK;
 }
