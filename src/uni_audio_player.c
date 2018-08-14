@@ -29,6 +29,7 @@
 #define PCM_FRAME_SIZE           (640)
 #define AUDIO_READ_PER_FRAME_CNT (5)
 #define AUDIO_ALL_STOPPED        (-1)
+#define DATABUF_LEN              (4096)
 
 static struct {
   DataBufHandle      databuf_handle[AUDIO_PLAYER_CNT];
@@ -214,7 +215,7 @@ static Result _create_audio_player_thread(void) {
 static void _databuf_create() {
   int i;
   for (i = 0; i < AUDIO_PLAYER_CNT; i++) {
-    g_audio_player.databuf_handle[i] = DataBufferCreate(4096);
+    g_audio_player.databuf_handle[i] = DataBufferCreate(DATABUF_LEN);
   }
 }
 
