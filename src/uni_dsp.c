@@ -146,7 +146,7 @@ static void _record_echo(char *buf, int len) {
 
 static void _record_4mic(char *buf, int len) {
   static int fd = -1;
-  if (-1 == fd ) {
+  if (-1 == fd) {
     fd = uni_open("4mic.pcm", UNI_O_WRONLY | UNI_O_CREAT, 0644);
   }
   uni_write(fd, buf, len);
