@@ -24,6 +24,7 @@
 #include "uni_audio_player.h"
 #include "uni_log.h"
 #include "uni_databuf.h"
+#include "uni_event.h"
 
 #define MAX_PCM_FILE_LIST_LEN (10)
 #define PCM_PLAYER_TAG        "pcm_player"
@@ -42,6 +43,7 @@ static uni_s32 _audio_player_callback(DataBufHandle handle) {
   uni_s32 read_size;
   pthread_mutex_lock(&g_pcm_player.mutex);
   if (g_pcm_player.cur_pos == g_pcm_player.len) {
+    SendEvent(AUDIO_PLAY_PCM_END);
     LOGT(PCM_PLAYER_TAG, "pcm play finish");
     free(g_pcm_player.buf);
     pthread_mutex_unlock(&g_pcm_player.mutex);

@@ -26,6 +26,7 @@
 #include "libavformat/avformat.h"
 #include "libswresample/swresample.h"
 #include "uni_log.h"
+#include "uni_event.h"
 
 #define MP3_PLAYER_TAG       "mp3_player"
 #define MAX_AUDIO_FRAME_SIZE 40680 // 1 second of 48khz 32bit audio
@@ -279,6 +280,7 @@ static uni_s32 _audio_player_callback(DataBufHandle data_buffer) {
     }
     av_free_packet(g_mp3_player.packet);
   } else {
+    SendEvent(AUDIO_PLAY_MEDIA_END);
     LOGT(MP3_PLAYER_TAG, "mp3 play finished");
     return -1;
   }

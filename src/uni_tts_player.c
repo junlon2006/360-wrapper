@@ -28,8 +28,7 @@
 #include "list_head.h"
 #include "uni_databuf.h"
 #include "uni_tts_config.h"
-//#include "uni_event_type.h"
-//#include "uni_event_route.h"
+#include "uni_event.h"
 #include "uni_audio_player.h"
 #include "uni_tts_online_process.h"
 #include "uni_tts_offline_process.h"
@@ -62,20 +61,6 @@ typedef struct {
 } TtsPlayer;
 
 static TtsPlayer g_tts_player;
-
-#if 0
-static void TtsEventSend(uni_s32 event_type) {
-  Event *event = NULL;
-  EventContent event_content;
-  uni_memset(&event_content, 0, sizeof(EventContent));
-  event_content.err_code = 0;
-  event = EventCreate(EVENT_SEQUENCE_ID_DEFAULT, event_type, &event_content,
-                      DefaultEventContentFreeHandler);
-  LOGD(TTS_PLAYER_TAG, "event_type=%s",Event2Str(event_type));
-  EventRouteProcess(event);
-  EventFree(event);
-}
-#endif
 
 static TtsPlayContent *_get_play_content() {
   list_head *p;
@@ -126,11 +111,10 @@ static TtsPlayContent *_alloc_play_content(char *play_content, TtsType type) {
 }
 
 static void _send_tts_start_event_2_route() {
-  //TtsEventSend(TTS_START_EVENT);
 }
 
 static void _send_tts_end_event_2_route() {
-  //TtsEventSend(TTS_END_EVENT);
+  SendEvent(AUDIO_PLAY_TTS_END);
 }
 
 static void _set_tts_state(TtsState state) {
@@ -271,7 +255,7 @@ static uni_s32 _audio_data_retrieve(DataBufHandle handle) {
   if (TTS_END == g_tts_player.state &&
       0 == DataBufferGetDataSize(g_tts_player.databuf)) {
     LOGT(TTS_PLAYER_TAG, "tts retrieve end");
-    //_send_tts_end_event_2_route(TTS_END_EVENT);
+    _send_tts_end_event_2_route();
     return -1;
   }
   if ((free_size = DataBufferGetFreeSize(handle)) <= 0) {

@@ -1,5 +1,5 @@
-/**************************************************************************
- * Copyright (C) 2017-2017  Unisound
+/**********************************************************************
+ * Copyright (C) 2017-2018  Unisound
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,24 +14,35 @@
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- **************************************************************************
+ **********************************************************************
  *
- * Description : uni_event.h
- * Author      : shangjinlong.unisound.com
- * Date        : 2018.06.19
+ * Description : uni_event_register.h
+ * Author      : shangjinlong@unisound.com
+ * Date        : 2018.08.14
  *
- **************************************************************************/
-#ifndef UTILS_EVENT_INC_UNI_EVENT_H_
-#define UTILS_EVENT_INC_UNI_EVENT_H_
+ **********************************************************************/
+
+#ifndef UNI_EVENT_REGISTER_H_
+#define UNI_EVENT_REGISTER_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "uni_iot.h"
-#include "../inc/uni_event_register.h"
+typedef enum {
+  AUDIO_PLAY_TTS_END = 0,
+  AUDIO_PLAY_TTS_ERROR,
+  AUDIO_PLAY_MEDIA_END,
+  AUDIO_PLAY_MEDIA_ERROR,
+  AUDIO_PLAY_PCM_END,
+  AUDIO_PLAY_PCM_ERROR,
+} EventType;
 
-int SendEvent(EventType event);
+typedef void (*CbEventType)(EventType type);
+
+int EventTypeCallbackRegister(CbEventType cb_event_type);
+void EventTypeCallbackUnRegister();
+const char *EventType2String(EventType type);
 
 #ifdef __cplusplus
 }

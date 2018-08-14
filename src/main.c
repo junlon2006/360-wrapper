@@ -32,9 +32,11 @@
 #include "uni_config.h"
 #include "uni_mp3_parse_pcm.h"
 #include "uni_pcm_player.h"
+#include "uni_event.h"
 
 #define MAIN_TAG        "main"
 #define RESOURCE_PATH   "/run/uniapp"
+#define TEST_2_MP3_MIX  (0)
 
 typedef enum {
   MUSIC_PLAYING,
@@ -124,36 +126,50 @@ static void _get_audio_source(char *raw_pcm, int bytes_len,
   }
 }
 
+#if TEST_2_MP3_MIX
 static void _mp3_parse_pcm_callback(char *data, int len, Mp3ParseErrorCode rc) {
   static char *buf = NULL;
-  static int index = 0;
+  static int read_len = 0;
   if (NULL == buf) {
     buf = malloc(1024 * 1024 * 10);
   }
   if (rc == MP3_PARSE_OK) {
-    memcpy(buf + index, data, len);
-    index += len;
+    memcpy(buf + read_len, data, len);
+    read_len += len;
   }
   if (rc == MP3_PARSE_DONE) {
     LOGE(MAIN_TAG, "start pcm player");
-    PcmPlay(buf, index);
+    PcmPlay(buf, read_len);
   }
+}
+#endif
+
+static void _mp3_mix_test() {
+#if TEST_2_MP3_MIX
+  Mp3ParsePcm("http://m128.xiami.net/770/2110321770/2103794783/1803654324_"
+              "1531289479477.mp3?auth_key=1534474800-0-0-b918c74460761ba8d"
+              "e72dda444dbbdc8", _mp3_parse_pcm_callback);
+#endif
+  usleep(30 * 1000 * 1000);
+  PcmStop();
+}
+
+static void _event_callback(EventType type) {
+  LOGW(MAIN_TAG, "recv event %d[%s]", type, EventType2String(type));
 }
 
 int main() {
   LasrParam lasr_param;
   lasr_param.frame_size_msec = 40;
+  EventTypeCallbackRegister((CbEventType)_event_callback);
   if (0 != LasrInit(RESOURCE_PATH, &lasr_param, _get_audio_source)) {
     LOGE(MAIN_TAG, "lasr init failed");
     return -1;
   }
-  Mp3ParsePcm("http://m128.xiami.net/770/2110321770/2103794783/1803654324_1531289479477.mp3?auth_key=1534474800-0-0-b918c74460761ba8de72dda444dbbdc8",
-              _mp3_parse_pcm_callback);
   LOGT(MAIN_TAG, "360 demo start successfully");
-  usleep(30 * 1000 * 1000);
-  PcmStop();
-  while (1) {
-    usleep(1000 * 1000);
+  _mp3_mix_test();
+  while (TRUE) {
+    usleep(1000 * 1000 * 30);
   }
   LasrFinal();
   return 0;
