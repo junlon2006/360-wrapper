@@ -130,8 +130,6 @@ static uni_bool _is_all_player_stopped() {
 static uni_s32 _audio_write(uni_u32 frames) {
   char write_buf[PCM_FRAME_SIZE] = {0};
   uni_u32 total_frames = 0;
-  uni_s32 i;
-  uni_s32 rc;
   while (total_frames++ < frames) {
     _get_enough_source_data();
     _generate_mixed_data(write_buf, sizeof(write_buf));

@@ -31,7 +31,7 @@ extern "C" {
 typedef struct {
   uni_u32 channels;
   uni_u32 rate;
-  uni_u32 bit; /*16, 32*/
+  uni_u32 bit;
 } AudioParam;
 
 #ifdef __cplusplus

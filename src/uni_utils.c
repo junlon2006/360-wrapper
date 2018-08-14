@@ -32,23 +32,16 @@
 
 #define UTILS_TAG   "utils"
 
-static Result _audio_out_init() {
+static void _audio_out_init() {
   AudioPlayerParam param;
   param.channels = 1;
   param.rate = 16000;
   param.bit = 16;
-  if (E_OK != AudioPlayerInit(&param)) {
-    LOGE(UTILS_TAG, "audio play init failed");
-    return E_FAILED;
-  }
-  if (E_OK != Mp3Init(&param)) {
-    LOGE(UTILS_TAG, "mp3 init failed");
-    return E_FAILED;
-  }
-  return E_OK;
+  AudioPlayerInit(&param);
+  Mp3Init(&param);
 }
 
-int UtilsInit(const char *resource_file_path) {
+Result UtilsInit(const char *resource_file_path) {
   char tts_config_file_name[256];
   LogInitialize(NULL);
   ConfigInitialize();
@@ -59,12 +52,11 @@ int UtilsInit(const char *resource_file_path) {
   TtsSetSpeaker("kiyo");
   TtsPlayString("欢迎使用云知声智能语音产品", TTS_ONLINE);
   LOGT(UTILS_TAG, "utils init successfully");
-  return 0;
+  return E_OK;
 }
 
-int UtilsFinal() {
+void UtilsFinal() {
   TtsDestroy();
   ConfigFinalize();
   LogFinalize();
-  return 0;
 }

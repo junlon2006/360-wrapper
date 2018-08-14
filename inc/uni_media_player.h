@@ -30,20 +30,6 @@ extern "C" {
 #endif
 
 /**
- * 功能：初始化MediaPlayer
- * 参数：void
- * 返回：成功返回0，失败返回-1
- */
-int MediaPlayerInit(void);
-
-/**
- * 功能：注销MediaPlayer
- * 参数：void
- * 返回：成功返回0，失败返回-1
- */
-void MediaPlayerFinal(void);
-
-/**
  * 功能：开始播放
  * 参数：url播放地址
  * 返回：成功返回0，失败返回-1

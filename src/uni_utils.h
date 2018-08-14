@@ -29,8 +29,10 @@
 extern "C" {
 #endif
 
-int UtilsInit(const char *resource_file_path);
-int UtilsFinal(void);
+#include "uni_iot.h"
+
+Result UtilsInit(const char *resource_file_path);
+void   UtilsFinal(void);
 
 #ifdef __cplusplus
 }

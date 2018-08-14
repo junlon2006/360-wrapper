@@ -91,7 +91,7 @@ static struct {
 } g_mp3_player = {NULL, NULL, NULL, NULL, NULL, NULL,
                   0, 0, 0, 0,
                   0, 0, NULL, MP3_IDLE_STATE, NULL, NULL,
-                  0, BLOCK_NULL};
+                  0, 0, BLOCK_NULL};
 
 static uni_s32 interrupt_cb(void *ctx) {
   uni_s32 seconds;
@@ -229,13 +229,13 @@ static uni_s32 _audio_player_callback(DataBufHandle data_buffer) {
   uni_s32 ret = 0;
   uni_s32 rc = 0;
   static uni_s32 audio4ErrorCnt = 0;
-  uni_s64 byte_position = 0;
+  //uni_s64 byte_position = 0;
   if (MP3_PLAYING_STATE != g_mp3_player.state) {
     return 0;
   }
   g_mp3_player.block_state = BLOCK_READ_FRAME;
   g_mp3_player.last_timestamp = time((time_t *)NULL);
-  byte_position = g_mp3_player.pFormatCtx->pb->pos;
+  //byte_position = g_mp3_player.pFormatCtx->pb->pos;
   if (av_read_frame(g_mp3_player.pFormatCtx, g_mp3_player.packet) >= 0) {
 #if 0
     LOGW(MP3_PLAYER_TAG, "pos=%lld, ptr=%p, end=%p, offset=%d, size=%d, "
@@ -567,7 +567,7 @@ Result Mp3SeekToMsec(int msec) {
        g_mp3_player.time_base);
 #if 0
   double m_start_time = 100.0;
-  int seek_ts = m_start_time * (g_mp3_player.pCodecCtx->time_base.den) / 
+  int seek_ts = m_start_time * (g_mp3_player.pCodecCtx->time_base.den) /
     g_mp3_player.pCodecCtx->time_base.num;
   av_seek_frame(g_mp3_player.pFormatCtx, g_mp3_player.audioStream,
                 //g_mp3_player.pFormatCtx->duration/1000 * 0.1,
@@ -575,6 +575,7 @@ Result Mp3SeekToMsec(int msec) {
                 AVSEEK_FLAG_ANY);
 #endif
   avio_seek(g_mp3_player.pFormatCtx->pb, 2523206, SEEK_SET);
+  return E_OK;
 }
 
 uni_bool Mp3CheckIsPlaying(void) {

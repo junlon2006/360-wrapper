@@ -29,17 +29,11 @@ extern "C" {
 #endif
 
 #include "uni_iot.h"
-//#include "uni_event_list.h"
 
 typedef enum {
   TTS_ONLINE,
   TTS_OFFLINE,
 } TtsType;
-
-#define EventSet_Tts ( \
-  TTS_START_EVENT \
-  TTS_END_EVENT \
-)
 
 Result TtsCreate(const char *config_file);
 Result TtsDestroy(void);

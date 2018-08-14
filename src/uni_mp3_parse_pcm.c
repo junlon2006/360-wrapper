@@ -298,6 +298,7 @@ static uni_s32 _create_decode_worker_thread(CbPoolPcmData cb_pool_pcm_data) {
               sizeof(tThreadParm.task_name));
   uni_pthread_create(&pid, &tThreadParm, _decode_tsk, cb_pool_pcm_data);
   uni_pthread_detach(pid);
+  return 0;
 }
 
 static void _mp3_parse_pcm_init() {

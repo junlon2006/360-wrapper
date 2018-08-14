@@ -133,6 +133,7 @@ Result TtsOnlineProcess(char *content, DataBufHandle databuf,
 Result TtsOnlineSetSpeaker(const char *speaker) {
   LOGT(TTS_ONLINE_TAG, "set tts speaker=%s", speaker);
   uni_strncpy(g_tts_online.speaker, speaker, sizeof(g_tts_online.speaker));
+  return E_OK;
 }
 
 #else

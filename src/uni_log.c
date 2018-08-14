@@ -80,7 +80,7 @@ static unsigned long _get_now_str(char *buf, int len) {
   } else if (12 < time_zone) {
     time_zone -= 24;
   }
-#define PRId64 "ld"
+#define PRId64 "lld"
   snprintf(buf, len, "%4d/%d/%02d %02d:%02d:%02d.%06"PRId64"(UTC%+d)",
       local.tm_year + 1900,
       local.tm_mon + 1,

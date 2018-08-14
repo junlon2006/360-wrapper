@@ -110,7 +110,7 @@ static TtsPlayContent *_alloc_play_content(char *play_content, TtsType type) {
   return content;
 }
 
-static void _send_tts_start_event_2_route() {
+void _send_tts_start_event_2_route() {
 }
 
 static void _send_tts_end_event_2_route() {

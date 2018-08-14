@@ -65,7 +65,7 @@ typedef struct {
 static DspInfo g_dsp_info = {0};
 
 static void _preproc_get_4mic_refs_data(char *buf, int len) {
-  int i, cnt;
+  int i;
   char *tmp = buf;
   char *mic = g_dsp_info.mic;
   char *ref = g_dsp_info.ref;
@@ -79,7 +79,7 @@ static void _preproc_get_4mic_refs_data(char *buf, int len) {
 }
 
 static void _preproc_get_4mic_refs_2ch_data(char *buf, int len) {
-  int i, cnt;
+  int i;
   char *tmp = buf;
   char *mic = g_dsp_info.mic;
   char *ref = g_dsp_info.ref;
@@ -157,7 +157,6 @@ static char *_mic_proccess(char *audio_raw_data, int len) {
   short *asr = NULL;
   short *vad = NULL;
   int outlen = 0;
-  int is_wakeup;
   if (2 == g_dsp_info.refs_num) {
     _preproc_get_4mic_refs_2ch_data(audio_raw_data, len);
   } else {
@@ -217,7 +216,7 @@ static int _audio_open() {
   return 0;
 }
 
-static int _audio_close() {
+static void _audio_close() {
   uni_hal_audio_close(g_dsp_info.audio_handle);
   g_dsp_info.audio_handle = NULL;
 }

@@ -225,13 +225,8 @@ static int _get_vad_status() {
   int vad_end = FALSE;
   long long output_vad_state_info = get_vad_state();
   while (output_vad_state_info != 0) {
-    long long output_count_filter = 15ULL << 58;
     long long vad_state_filter = 3ULL << 56;
-    long long time_point_filter = (1ULL << 56) - 1;
-    int output_vad_state_count =
-      (output_vad_state_info & output_count_filter) >> 58;
     int vad_state = (output_vad_state_info & vad_state_filter) >> 56;
-    long long time_point = output_vad_state_info & time_point_filter;
     if (vad_state == 3) {
       vad_end = TRUE;
     }
