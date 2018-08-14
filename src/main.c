@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  **********************************************************************
  *
- * Description : uni_lasr.h
+ * Description : main.c
  * Author      : shangjinlong@unisound.com
  * Date        : 2018.07.31
  *
