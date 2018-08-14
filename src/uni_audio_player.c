@@ -101,9 +101,7 @@ static void _generate_mixed_data(char *output, uni_s32 len) {
     out = (short *)output;
     in = (short *)buf;
     for (j = 0; j < uni_min(data_len, PCM_FRAME_SIZE) / sizeof(short); j++) {
-      *out += (*in) * ratio;
-      out++;
-      in++;
+      *out++ += (*in++) * ratio;
     }
   }
 }
