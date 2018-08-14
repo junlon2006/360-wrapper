@@ -50,7 +50,7 @@ Result UtilsInit(const char *resource_file_path) {
            "%s/config/config_file", resource_file_path);
   TtsCreate(tts_config_file_name);
   TtsSetSpeaker("kiyo");
-  TtsPlayString("欢迎使用云知声智能语音产品", TTS_ONLINE);
+  TtsPlay("欢迎使用云知声智能语音产品", TTS_ONLINE);
   LOGT(UTILS_TAG, "utils init successfully");
   return E_OK;
 }

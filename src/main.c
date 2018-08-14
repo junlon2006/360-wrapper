@@ -50,14 +50,14 @@ static void _music_test(char *command) {
   if (0 == strcmp(command, "小宝小宝")) {
     LOGT(MAIN_TAG, "tts speaker: boy");
     TtsSetSpeaker("boy");
-    TtsPlayString("你好，我在", TTS_ONLINE);
+    TtsPlay("你好，我在", TTS_ONLINE);
     AudioPlayerSetFrontType(AUDIO_TTS_PLAYER, 0.8);
     return;
   }
   if (0 == strcmp(command, "小贝小贝")) {
     LOGT(MAIN_TAG, "tts speaker: lzl");
     TtsSetSpeaker("kiyo");
-    TtsPlayString("你好，我在", TTS_ONLINE);
+    TtsPlay("你好，我在", TTS_ONLINE);
     AudioPlayerSetFrontType(AUDIO_TTS_PLAYER, 0.8);
     return;
   }
@@ -105,7 +105,7 @@ static void _music_test(char *command) {
     return;
   }
   if (0 == strcmp(command, "北京天气")) {
-    TtsPlayString("北京今天天气晴，33到37度，空气质量优，外出请注意安全",
+    TtsPlay("北京今天天气晴，33到37度，空气质量优，外出请注意安全",
                   TTS_ONLINE);
     AudioPlayerSetFrontType(AUDIO_TTS_PLAYER, 0.8);
     return;

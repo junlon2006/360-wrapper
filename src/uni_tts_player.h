@@ -37,7 +37,7 @@ typedef enum {
 
 Result TtsCreate(const char *config_file);
 Result TtsDestroy(void);
-Result TtsPlayString(char *play_str, TtsType tts_type);
+Result TtsPlay(char *play_string, TtsType tts_type);
 Result TtsStop(void);
 Result TtsSetSpeaker(const char *speaker);
 

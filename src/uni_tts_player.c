@@ -275,7 +275,7 @@ static uni_s32 _audio_data_retrieve(DataBufHandle handle) {
   return cur_read_size;
 }
 
-Result TtsPlayString(char *play_content, TtsType type) {
+Result TtsPlay(char *play_content, TtsType type) {
   TtsPlayContent *content = NULL;
   if (NULL == play_content ||
       0 == uni_strlen(play_content) ||

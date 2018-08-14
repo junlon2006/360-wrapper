@@ -39,7 +39,6 @@ Result Mp3Stop(void);
 Result Mp3SeekToMsec(int msec);
 Result Mp3Init(AudioParam *param);
 Result Mp3Final(void);
-
 uni_bool Mp3CheckIsPlaying(void);
 uni_bool Mp3CheckIsPause(void);
 
