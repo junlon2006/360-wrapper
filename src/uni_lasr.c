@@ -243,9 +243,9 @@ static void _get_keyword_frame_id_range(int *keyword_start_frame_id,
                             g_lasr.asr_start_frame_id;
   *keyword_end_frame_id = engine_asr_end_time / 16 + g_lasr.asr_start_frame_id;
   LOGT(LASR_TAG, "keyword frame_id[%d-%d], %dms, engine_time[%d-%d], "
-      "asr_start_frame_id=%d", *keyword_start_frame_id, *keyword_end_frame_id,
-      engine_asr_end_time - engine_asr_start_time, engine_asr_start_time,
-      engine_asr_end_time, g_lasr.asr_start_frame_id);
+       "asr_start_frame_id=%d", *keyword_start_frame_id, *keyword_end_frame_id,
+       engine_asr_end_time - engine_asr_start_time, engine_asr_start_time,
+       engine_asr_end_time, g_lasr.asr_start_frame_id);
 }
 
 static void _update_frame_range_first_id(int step_cnt) {
@@ -379,7 +379,7 @@ static void _reset() {
 #if RECORD_DEBUG_OPEN
 static void _record(char *buf, int len) {
   static int fd = -1;
-  if (-1 == fd ) {
+  if (-1 == fd) {
     fd = uni_open("lasr.pcm", UNI_O_WRONLY | UNI_O_CREAT, 0644);
   }
   uni_write(fd, buf, len);
