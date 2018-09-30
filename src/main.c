@@ -35,7 +35,7 @@
 #include "uni_event.h"
 
 #define MAIN_TAG        "main"
-#define RESOURCE_PATH   "/run/uniapp"
+#define RESOURCE_PATH   "."
 #define TEST_2_MP3_MIX  (0)
 
 typedef enum {
@@ -65,9 +65,8 @@ static void _music_test(char *command) {
   if (0 == strcmp(command, "我要听歌")) {
     LOGW(MAIN_TAG, "play music");
     if (MUSIC_IDLE == state) {
-      Mp3Play("http://m128.xiami.net/158/7158/2103755363/180336"
-              "5859_1529979280707.mp3?auth_key=1534474800-0-0-d84"
-              "3d147ee52deee4bbc9c53f0c28aa8");
+      Mp3Play("http://m128.xiami.net/198/1198/6067/74192_39943_l.mp3?"
+              "auth_key=1535079600-0-0-0f227c0a896047f08d42f5a9352b0f71");
       state = MUSIC_PLAYING;
     } else {
       LOGW(MAIN_TAG, "invalid state");

@@ -40,8 +40,8 @@ typedef enum {
 
 typedef void (*CbEventType)(EventType type);
 
-int EventTypeCallbackRegister(CbEventType cb_event_type);
-void EventTypeCallbackUnRegister();
+int        EventTypeCallbackRegister(CbEventType cb_event_type);
+void       EventTypeCallbackUnRegister();
 const char *EventType2String(EventType type);
 
 #ifdef __cplusplus

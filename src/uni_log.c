@@ -23,6 +23,7 @@
  **********************************************************************/
 
 #include "uni_log.h"
+#include "uni_iot.h"
 #include <unistd.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -65,33 +66,17 @@ static char *_level_tostring(LogLevel level) {
   }
 }
 
-static unsigned long _get_now_str(char *buf, int len) {
+static void _get_now_str(char *buf, int len) {
   struct timeval tv;
   time_t s;
-  struct tm local, utc;
-  int time_zone = 0;
+  struct tm local;
   gettimeofday(&tv, NULL);
   s = tv.tv_sec;
-  gmtime_r(&s, &utc);
   localtime_r(&s, &local);
-  time_zone = local.tm_hour - utc.tm_hour;
-  if (time_zone < -12) {
-    time_zone += 24;
-  } else if (12 < time_zone) {
-    time_zone -= 24;
-  }
-#define PRId64 "lld"
-  snprintf(buf, len, "%4d/%d/%02d %02d:%02d:%02d.%06"PRId64"(UTC%+d)",
-      local.tm_year + 1900,
-      local.tm_mon + 1,
-      local.tm_mday,
-      local.tm_hour,
-      local.tm_min,
-      local.tm_sec,
-      (int64_t)tv.tv_usec,
-      time_zone);
-  return tv.tv_sec * 1000 + (tv.tv_usec / 1000);
+  snprintf(buf, len, "%02d:%02d:%02d.%06"PRId64" ", local.tm_hour,
+           local.tm_min, local.tm_sec, (int64_t)tv.tv_usec);
 }
+
 
 static inline pthread_t _get_thread_id() {
   return pthread_self();
@@ -155,16 +140,30 @@ static inline int _fill_thread_id(char *buf, int len) {
   return snprintf(buf, len, "%s", thread_id);
 }
 
-static inline int _fill_customer_info(char *buf, int len, char *fmt,
-                                      va_list args) {
-  return vsnprintf(buf, len, fmt, args);
-}
-
-static inline void _fill_line_feed(char *buf, int len, int cur_write_len) {
-  if (len <= cur_write_len) {
-    buf[len - 2] = '\n';
+static void _fill_customer_info(char *buf, int len, char *fmt, va_list args,
+                                int append_feed_line) {
+  int length, remain_len;
+  length = vsnprintf(buf, len, fmt, args);
+  length = uni_max(length, 0);
+  length = uni_min(length, len);
+  remain_len = len - length;
+  if (0 == remain_len) {
+    if (append_feed_line) {
+      buf[len - 2] = '\n';
+    }
     buf[len - 1] = '\0';
+    return;
   }
+  if (1 == remain_len) {
+    if (append_feed_line) {
+      buf[len - 2] = '\n';
+    }
+    return;
+  }
+  if (append_feed_line) {
+    strncat(buf, "\n", remain_len);
+  }
+  return;
 }
 
 static int _log_buffer_polling() {
@@ -203,8 +202,7 @@ int LogLevelValid(LogLevel level) {
   len += _fill_thread_id(buf + len, sizeof(buf) - len); \
   len += _fill_tag(buf + len, sizeof(buf) - len, tags); \
   len += _fill_function_line(buf + len, sizeof(buf) - len, function, line); \
-  len += _fill_customer_info(buf + len, sizeof(buf) - len, fmt, args); \
-  _fill_line_feed(buf, sizeof(buf), len); \
+  _fill_customer_info(buf + len, UNI_LOG_BUFFER_LEN - len, fmt, args, TRUE); \
 } while (0)
 
 static inline int _pid_exist(pthread_t pid) {
